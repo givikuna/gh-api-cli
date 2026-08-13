@@ -1,0 +1,20 @@
+{
+  "cSpell.words": [
+    "aeson",
+    "bytestring",
+    "devenv",
+    "Givi",
+    "newstyle",
+    "nixos",
+    "nixpkgs",
+    "numtide",
+    "optparse",
+    "pkgs",
+    "unwords"
+  ],
+  "haskell.ghcupExecutablePath": "ghc",
+  "haskell.manageHLS": "PATH",
+  "haskell.plugin.hlint.diagnosticsOn": true,
+  "haskell.formattingProvider": "fourmolu",
+  "haskell.serverExecutablePath": "haskell-language-server-wrapper"
+}

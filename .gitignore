@@ -1,2 +1,4 @@
 .devenv
-.vscode
+dist-newstyle
+time-1.16.0.1
+.direnv
