@@ -22,10 +22,15 @@
           buildInputs = with pkgs; [
             ghc
             haskell-language-server
-            cabal-install
-            stylish-haskell
 
+            cabal-install
+
+            stylish-haskell
             haskellPackages.cabal-gild
+
+            zlib
+            pkg-config
+
           ];
         };
       }

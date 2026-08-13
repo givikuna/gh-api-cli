@@ -3,6 +3,7 @@
     "aeson",
     "bytestring",
     "devenv",
+    "fmap",
     "Givi",
     "Jacken",
     "newstyle",

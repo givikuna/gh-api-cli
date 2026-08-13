@@ -48,6 +48,8 @@ executable gh-api-cli
   -- Modules included in this executable, other than Main.
   other-modules:
     CLI.Parser
+    GitHub.Client
+    GitHub.Engine
     GitHub.Types
 
   -- LANGUAGE extensions used by modules in this package.
@@ -56,6 +58,11 @@ executable gh-api-cli
   build-depends:
     aeson,
     base ^>=4.20.2.0,
+    bytestring,
+    http-client,
+    http-client-tls,
+    http-types,
+    time,
 
   -- Directories containing source files.
   hs-source-dirs:
