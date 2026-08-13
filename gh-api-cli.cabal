@@ -54,7 +54,8 @@ executable gh-api-cli
   -- other-extensions:
   -- Other library packages from which modules are imported.
   build-depends:
-    base ^>=4.20.2.0
+    aeson,
+    base ^>=4.20.2.0,
 
   -- Directories containing source files.
   hs-source-dirs:

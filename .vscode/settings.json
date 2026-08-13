@@ -4,6 +4,7 @@
     "bytestring",
     "devenv",
     "Givi",
+    "Jacken",
     "newstyle",
     "nixos",
     "nixpkgs",
@@ -15,6 +16,6 @@
   "haskell.ghcupExecutablePath": "ghc",
   "haskell.manageHLS": "PATH",
   "haskell.plugin.hlint.diagnosticsOn": true,
-  "haskell.formattingProvider": "fourmolu",
+  "haskell.formattingProvider": "stylish-haskell",
   "haskell.serverExecutablePath": "haskell-language-server-wrapper"
 }
