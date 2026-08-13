@@ -1,0 +1,41 @@
+indentation: 4
+
+column-limit: 100
+
+function-arrows: leading
+
+comma-style: leading
+
+record-style: aligned
+
+import-export-style: leading
+import-grouping: by-scope-then-qualified
+
+indent-wheres: true
+
+record-brace-space: true
+
+newlines-between-decls: 2
+
+haddock-style: single-line
+haddock-style-module: single-line
+haddock-location-signature: leading
+
+let-style: inline
+in-style: left-align
+
+if-style: indented
+
+single-constraint-parens: never
+single-deriving-parens: never
+
+sort-constraints: false
+sort-derived-classes: false
+sort-deriving-clauses: false
+
+trailing-section-operators: true
+
+unicode: never
+
+respectful: false
+

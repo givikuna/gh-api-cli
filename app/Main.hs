@@ -57,8 +57,15 @@ main = do
 
                             mapM_ (\r ->
                                     putStrLn $ name r ++ " - Stars: " ++ show (stargazersCount r)) finalRepos
-
-                _ -> do
-                    putStrLn "ERROR: What you look for does not exist"
-                    exitFailure
-
+                MostUsedLang -> do
+                    putStrLn "..."
+                Stars -> do
+                    putStrLn "..."
+                Followers -> do
+                    putStrLn "..."
+                Following -> do
+                    putStrLn "..."
+                Orgs -> do
+                    putStrLn "..."
+                TotalStars -> do
+                    putStrLn "..."
