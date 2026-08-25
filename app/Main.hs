@@ -52,7 +52,7 @@ main = do
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos = processRepos config rawRepos
+                            let finalRepos :: [Repo] = processRepos config rawRepos
                             putStrLn $ "Found " ++ show (length finalRepos) ++ " repos!"
 
                             mapM_ (\r ->

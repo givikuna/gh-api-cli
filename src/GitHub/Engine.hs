@@ -8,6 +8,11 @@ import           CLI.Parser   (AppConfig (..), SortOrder (..))
 
 import           GitHub.Types (Repo (..))
 
+data LangStat = LangStat
+    { langName  :: String
+    , langCount :: Int
+    } deriving (Show, Eq)
+
 processRepos :: AppConfig -> [Repo] -> [Repo]
 processRepos config repos =
     let
