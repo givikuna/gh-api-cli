@@ -92,7 +92,6 @@ getLanguageStats config repos = take (cfgLimit config) sortedStats
         Just o  -> o
         Nothing -> if sortField == "name" then Asc else Desc
 
-    -- 4. Apply the sort
     sortedStats = case (sortField, orderDir) of
         ("name", Asc)  -> sortOn langName baseStats
         ("name", Desc) -> sortOn (\s -> Down (langName s)) baseStats
