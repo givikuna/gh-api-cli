@@ -74,14 +74,27 @@ getTotalStars :: [Repo] -> Int
 getTotalStars repos = sum $ map stargazersCount repos
 
 getLanguageStats :: AppConfig -> [Repo] -> [LangStat]
-getLanguageStats config repos =
-    let
-        langs = [ l | r <- repos, Just l <- [language r] ]
-        totalLangs = length langs
-        grouped = group (sort langs)
-        stats = sortOn (\s -> Down (langCount s))
-              $ map (\g ->
-                  let count = length g
-                      perc = (fromIntegral count / fromIntegral totalLangs) * 100.0
-                  in LangStat (head g) count perc) grouped
-    in take (cfgLimit config) stats
+getLanguageStats config repos = take (cfgLimit config) sortedStats
+  where
+    langs = [ l | r <- repos, Just l <- [language r] ]
+    totalLangs = length langs
+
+    grouped = group (sort langs)
+    baseStats = map makeStat grouped
+
+    makeStat g =
+        let count = length g
+            perc  = (fromIntegral count / fromIntegral totalLangs) * 100.0
+        in LangStat (head g) count perc
+
+    sortField = fromMaybe "percentage" (cfgSort config)
+    orderDir  = case cfgOrder config of
+        Just o  -> o
+        Nothing -> if sortField == "name" then Asc else Desc
+
+    -- 4. Apply the sort
+    sortedStats = case (sortField, orderDir) of
+        ("name", Asc)  -> sortOn langName baseStats
+        ("name", Desc) -> sortOn (\s -> Down (langName s)) baseStats
+        (_, Asc)       -> sortOn langPerc baseStats
+        (_, Desc)      -> sortOn (\s -> Down (langPerc s)) baseStats
