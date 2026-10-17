@@ -51,6 +51,7 @@ executable gh-api-cli
     GitHub.Client
     GitHub.Engine
     GitHub.Types
+    Output.Format
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -59,6 +60,7 @@ executable gh-api-cli
     aeson,
     base ^>=4.20.2.0,
     bytestring,
+    file-embed,
     http-client,
     http-client-tls,
     http-types,

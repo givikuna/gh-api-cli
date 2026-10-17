@@ -56,3 +56,29 @@ getRepos username mToken = do
     -}
 
     (eitherDecode . responseBody) <$> httpLbs request manager
+
+getStarredRepos :: String -> Maybe String -> IO (Either String [Repo])
+getStarredRepos username mToken = do
+    manager <- newTlsManager
+    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/starred?per_page=100"
+
+    let baseHeaders = [(hUserAgent, "gh-api-cli")]
+    let authHeaders = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+    (eitherDecode . responseBody) <$> httpLbs request manager
+
+getFollowers :: String -> Maybe String -> IO (Either String [User])
+getFollowers username mToken = do
+    manager <- newTlsManager
+    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/followers?per_page=100"
+
+    let baseHeaders = [(hUserAgent, "gh-api-cli")]
+    let authHeaders = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+    (eitherDecode . responseBody) <$> httpLbs request manager

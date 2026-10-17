@@ -1,8 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Main (main) where
 
 -- import           Data.List          (group, sort)
+
+import           Data.FileEmbed     (embedStringFile)
 
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
@@ -12,6 +15,9 @@ import           CLI.Parser         (AppConfig (..), DataTarget (..), defaultCon
 import           GitHub.Client      (getRepos, getUser)
 import           GitHub.Engine      (getLanguageStats, getTotalStars, processRepos)
 import           GitHub.Types       (LangStat (..), Repo (..))
+
+appVersion :: String
+appVersion = $(embedStringFile ".version")
 
 main :: IO ()
 main = do
@@ -23,7 +29,7 @@ main = do
         putStrLn "targets: --total-stars, --repos, --followers, --most-used-lang"
 
     else if cfgShowVer config then do
-        putStrLn "gh-api-cli v0.1.0.0"
+        putStrLn $ "gh-api-cli v" ++ filter (/= '\n') appVersion
 
     else
         case cfgUser config of

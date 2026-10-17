@@ -106,6 +106,7 @@ parseArgs (arg : rest) config =
     case arg of
         "--help"            -> parseArgs rest (config { cfgShowHelp = True })
         "--version"         -> parseArgs rest (config { cfgShowVer = True })
+        "-v"                -> parseArgs rest (config { cfgShowVer = True })
 
         "--total-stars"     -> parseArgs rest (config { cfgTarget = TotalStars })
         "--most-used-lang"  -> parseArgs rest (config { cfgTarget = MostUsedLang })

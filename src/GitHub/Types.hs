@@ -5,7 +5,14 @@
 module GitHub.Types where
 
 import           Data.Aeson
-    (FromJSON (..), Options (..), camelTo2, defaultOptions, genericParseJSON)
+    ( FromJSON (..)
+    , Options (..)
+    , ToJSON (..)
+    , camelTo2
+    , defaultOptions
+    , genericParseJSON
+    , genericToJSON
+    )
 
 import           Data.Time    (UTCTime)
 
@@ -24,6 +31,9 @@ data User = User
 
 instance FromJSON User where
     parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON User where
+    toJSON = genericToJSON jsonOptions
 
 data Repo = Repo
     { name            :: String,
@@ -44,6 +54,8 @@ data Repo = Repo
 instance FromJSON Repo where
     parseJSON = genericParseJSON jsonOptions
 
+instance ToJSON Repo where
+    toJSON = genericToJSON jsonOptions
 
 data LangStat = LangStat
     { langName  :: String
