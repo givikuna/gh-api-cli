@@ -1,10 +1,10 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module Main (main) where
 
 import           Data.FileEmbed     (embedStringFile)
-import qualified Data.Map           as Map
 
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
@@ -111,7 +111,7 @@ main = do
                         Left err -> putStrLn err >> exitFailure
                         Right users -> do
                             putStrLn $ "found " ++ show (length users) ++ " followers!"
-                            mapM_ (\u -> putStrLn $ login (u :: User)) users
+                            mapM_ (\(User { login = l }) -> putStrLn l) users
 
                 Following -> do
                     putStrLn "fetching following..."
@@ -120,7 +120,7 @@ main = do
                         Left err -> putStrLn err >> exitFailure
                         Right users -> do
                             putStrLn $ "following " ++ show (length users) ++ " users!"
-                            mapM_ (\u -> putStrLn $ login (u :: User)) users
+                            mapM_ (\(User { login = l }) -> putStrLn l) users
 
                 Orgs -> do
                     putStrLn "fetching organizations..."
@@ -129,7 +129,7 @@ main = do
                         Left err -> putStrLn err >> exitFailure
                         Right orgsList -> do
                             putStrLn $ "found " ++ show (length orgsList) ++ " organizations!"
-                            mapM_ (\o -> putStrLn $ login (o :: Org)) orgsList
+                            mapM_ (\(Org { login = l }) -> putStrLn l) orgsList
 
                 TotalStars -> do
                     putStrLn "fetching repos to calculate total stars..."

@@ -79,8 +79,8 @@ getLanguageStats config langMaps = take (cfgLimit config) sortedStats
 
     baseStats = if totalBytes == 0
         then []
-        else [ LangStat langName bytes ((fromIntegral bytes / fromIntegral totalBytes) * 100.0)
-             | (langName, bytes) <- Map.toList combinedMap ]
+        else [ LangStat lName bytes ((fromIntegral bytes / fromIntegral totalBytes) * 100.0)
+             | (lName, bytes) <- Map.toList combinedMap ]
 
     sortField = fromMaybe "percentage" (cfgSort config)
     orderDir  = case cfgOrder config of

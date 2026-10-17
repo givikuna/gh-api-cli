@@ -60,6 +60,9 @@ There are a lot of available data tags:
   - Constraints:
     - `--exclude={lang1}` excludes lang1
     - `--exclude={lang1,lang2,lang3,...}` excludes however many languages you put there
+    - `--ignore={repo1}` excludes repo1
+    - `--ignore={repo1,repo2,...}` excludes all the repos you put here
+    - repos are just the names of the repos.
   - Sorting (Optional):
     - `--sort={field}` - `percentage` - this is on by default, `name` - alphabetical
     - `--order={asc|desc}` - Order direction, `desc` for down, `asc` for up. `desc` is default for `percentage` and `asc` is default for `name`.
