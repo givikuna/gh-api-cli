@@ -2,6 +2,31 @@
 
 A terminal tool for querying the github API.
 
+## Installation
+
+In your `flake.nix`:
+
+```Nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    gh-api-cli.url = "github:givikuna/gh-api-cli";
+  };
+}
+```
+
+Now, its available in anything as:
+
+```Nix
+{ inputs, ... }: {
+  environment.systemPackages = [
+    inputs.gh-api-cli.packages.${pkgs.system}.default
+  ];
+}
+```
+
+## Documentation
+
 ### Globals
 
 - `--help` displays a help message
