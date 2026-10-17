@@ -10,8 +10,8 @@ import           System.Exit        (exitFailure)
 import           CLI.Parser         (AppConfig (..), DataTarget (..), defaultConfig, parseArgs)
 
 import           GitHub.Client      (getRepos, getUser)
-import           GitHub.Engine      (getTotalStars, processRepos)
-import           GitHub.Types       (Repo (..))
+import           GitHub.Engine      (getLanguageStats, getTotalStars, processRepos)
+import           GitHub.Types       (LangStat (..), Repo (..))
 
 main :: IO ()
 main = do
@@ -60,7 +60,19 @@ main = do
                             mapM_ (\r ->
                                     putStrLn $ name r ++ " - Stars: " ++ show (stargazersCount r)) finalRepos
                 MostUsedLang -> do
-                    putStrLn "..."
+                    putStrLn "fetching repos to calculate language statistics..."
+                    result <- getRepos username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: Failed to fetch repos"
+                            putStrLn err
+                            exitFailure
+                        Right rawRepos -> do
+                            let finalRepos = processRepos config rawRepos
+                            let stats = getLanguageStats config finalRepos
+                            putStrLn $ "language stats based on " ++ show (length finalRepos) ++ " repos:"
+                            mapM_ (\stat ->
+                                putStrLn $ langName stat ++ ": " ++ show (langCount stat) ++ " repos") stats
                 Stars -> do
                     putStrLn "..."
                 Followers -> do

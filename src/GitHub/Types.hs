@@ -43,3 +43,9 @@ data Repo = Repo
 
 instance FromJSON Repo where
     parseJSON = genericParseJSON jsonOptions
+
+
+data LangStat = LangStat
+    { langName  :: String
+    , langCount :: Int
+    } deriving (Show, Eq)

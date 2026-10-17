@@ -1,17 +1,12 @@
 module GitHub.Engine where
 
-import           Data.List    (sortOn)
+import           Data.List    (group, sort, sortOn)
 import           Data.Maybe   (fromMaybe)
 import           Data.Ord     (Down (..))
 
 import           CLI.Parser   (AppConfig (..), SortOrder (..))
 
-import           GitHub.Types (Repo (..))
-
-data LangStat = LangStat
-    { langName  :: String
-    , langCount :: Int
-    } deriving (Show, Eq)
+import           GitHub.Types (LangStat (..), Repo (..))
 
 processRepos :: AppConfig -> [Repo] -> [Repo]
 processRepos config repos =
@@ -77,3 +72,12 @@ processRepos config repos =
 
 getTotalStars :: [Repo] -> Int
 getTotalStars repos = sum $ map stargazersCount repos
+
+getLanguageStats :: AppConfig -> [Repo] -> [LangStat]
+getLanguageStats config repos =
+    let
+        langs = [ l | r <- repos, Just l <- [language r] ]
+        grouped = group (sort langs)
+        stats = sortOn (\s -> Down (langCount s))
+              $ map (\g -> LangStat (head g) (length g)) grouped
+    in take (cfgLimit config) stats
