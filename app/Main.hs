@@ -2,13 +2,15 @@
 
 module Main (main) where
 
+-- import           Data.List          (group, sort)
+
 import           System.Environment (getArgs)
 import           System.Exit        (exitFailure)
 
 import           CLI.Parser         (AppConfig (..), DataTarget (..), defaultConfig, parseArgs)
 
 import           GitHub.Client      (getRepos, getUser)
-import           GitHub.Engine      (processRepos)
+import           GitHub.Engine      (getTotalStars, processRepos)
 import           GitHub.Types       (Repo (..))
 
 main :: IO ()
@@ -17,8 +19,8 @@ main = do
     let config :: AppConfig = parseArgs args defaultConfig
 
     if cfgShowHelp config then do
-        putStrLn "Usage: gh-api-cli --user<username> [TARGET] [OPTIONs]"
-        putStrLn "Targets: --total-stars, --repos, --followers, --most-used-lang"
+        putStrLn "usage: gh-api-cli --user<username> [TARGET] [OPTIONs]"
+        putStrLn "targets: --total-stars, --repos, --followers, --most-used-lang"
 
     else if cfgShowVer config then do
         putStrLn "gh-api-cli v0.1.0.0"
@@ -44,7 +46,7 @@ main = do
                             putStrLn "YAY the USER has been FETCHED"
                             print user
                 Repos -> do
-                    putStrLn "Fetching repos..."
+                    putStrLn "fetching repos..."
                     result <- getRepos username $ cfgToken config
                     case result of
                         Left err -> do
@@ -68,4 +70,14 @@ main = do
                 Orgs -> do
                     putStrLn "..."
                 TotalStars -> do
-                    putStrLn "..."
+                    putStrLn "fetching repos to calculate total stars..."
+                    result <- getRepos username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: failed to fetch repos"
+                            putStrLn err
+                            exitFailure
+                        Right rawRepos -> do
+                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            let total :: Int = getTotalStars finalRepos
+                            putStrLn $ "total stars (across " ++ show (length finalRepos) ++ " repos): " ++ show total

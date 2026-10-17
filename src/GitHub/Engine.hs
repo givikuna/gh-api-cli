@@ -74,3 +74,6 @@ processRepos config repos =
         limitedRepos = take (cfgLimit config) sortedRepos
 
     in limitedRepos
+
+getTotalStars :: [Repo] -> Int
+getTotalStars repos = sum $ map stargazersCount repos
