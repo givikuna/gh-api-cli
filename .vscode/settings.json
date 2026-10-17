@@ -15,6 +15,7 @@
     "nixpkgs",
     "numtide",
     "optparse",
+    "Perc",
     "pkgs",
     "unwords"
   ],

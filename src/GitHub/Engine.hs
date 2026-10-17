@@ -77,7 +77,11 @@ getLanguageStats :: AppConfig -> [Repo] -> [LangStat]
 getLanguageStats config repos =
     let
         langs = [ l | r <- repos, Just l <- [language r] ]
+        totalLangs = length langs
         grouped = group (sort langs)
         stats = sortOn (\s -> Down (langCount s))
-              $ map (\g -> LangStat (head g) (length g)) grouped
+              $ map (\g ->
+                  let count = length g
+                      perc = (fromIntegral count / fromIntegral totalLangs) * 100.0
+                  in LangStat (head g) count perc) grouped
     in take (cfgLimit config) stats

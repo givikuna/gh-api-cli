@@ -2,7 +2,7 @@
 
 module CLI.Parser where
 
-import           Data.List (stripPrefix)
+import           Data.List (isPrefixOf, stripPrefix)
 
 data DataTarget
     = TotalStars
@@ -110,6 +110,7 @@ parseArgs (arg : rest) config =
 
         "--total-stars"     -> parseArgs rest (config { cfgTarget = TotalStars })
         "--most-used-lang"  -> parseArgs rest (config { cfgTarget = MostUsedLang })
+        "--most-used-langs" -> parseArgs rest (config { cfgTarget = MostUsedLang })
         "--repos"           -> parseArgs rest (config { cfgTarget = Repos })
         "--stars"           -> parseArgs rest (config { cfgTarget = Stars })
         "--followers"       -> parseArgs rest (config { cfgTarget = Followers })
@@ -212,6 +213,9 @@ parseArgs (arg : rest) config =
             | Just fMainLang <- stripPrefix "--filter-main-language=" arg
             -> parseArgs rest $ config
                 { cfgFilterMainLang = Just fMainLang }
+
+            | "-" `isPrefixOf` arg
+            -> error $ "unknown option: " ++ arg
 
             | otherwise
             -> parseArgs rest config

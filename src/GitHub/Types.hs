@@ -60,4 +60,5 @@ instance ToJSON Repo where
 data LangStat = LangStat
     { langName  :: String
     , langCount :: Int
+    , langPerc  :: Float
     } deriving (Show, Eq)

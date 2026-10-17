@@ -16,6 +16,8 @@ import           GitHub.Client      (getRepos, getUser)
 import           GitHub.Engine      (getLanguageStats, getTotalStars, processRepos)
 import           GitHub.Types       (LangStat (..), Repo (..))
 
+import           Text.Printf
+
 appVersion :: String
 appVersion = $(embedStringFile ".version")
 
@@ -76,9 +78,14 @@ main = do
                         Right rawRepos -> do
                             let finalRepos = processRepos config rawRepos
                             let stats = getLanguageStats config finalRepos
-                            putStrLn $ "language stats based on " ++ show (length finalRepos) ++ " repos:"
+
+                            putStrLn $ "Language stats based on " ++ show (length finalRepos) ++ " repos:"
                             mapM_ (\stat ->
-                                putStrLn $ langName stat ++ ": " ++ show (langCount stat) ++ " repos") stats
+                                -- printf "%.2f%%" formats the float to 2 decimal places
+                                putStrLn $ langName stat ++ ": "
+                                        ++ printf "%.2f%%" (langPerc stat)
+                                        ++ " (" ++ show (langCount stat) ++ " repos)"
+                                ) stats
                 Stars -> do
                     putStrLn "..."
                 Followers -> do
