@@ -1,0 +1,1138 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  Main.hs
+src/
+  CLI/
+    Parser.hs
+  Commands/
+    .keep
+  GitHub/
+    Client.hs
+    Engine.hs
+    Types.hs
+  Output/
+    Format.hs
+  Utils/
+    .keep
+test/
+  .keep
+.envrc
+.gitattributes
+.gitignore
+.stylish-haskell.yaml
+.version
+flake.lock
+flake.nix
+floskell.json
+fourmolu.yaml
+gh-api-cli.cabal
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/Commands/.keep">
+
+</file>
+
+<file path="src/Output/Format.hs">
+module Output.Format where
+
+import           CLI.Parser                 (AppConfig (..))
+import           Data.Aeson                 (encode)
+import qualified Data.ByteString.Lazy.Char8 as BSL
+import           GitHub.Types               (Repo (..))
+
+printRepos :: AppConfig -> [Repo] -> IO ()
+printRepos config repos = case cfgFormat config of
+    "json"  -> BSL.putStrLn $ encode repos
+    "table" -> do
+        putStrLn $ padRight 30 "NAME" ++ padRight 10 "STARS" ++ "LANGUAGE"
+        putStrLn $ replicate 60 '-'
+        mapM_ printRepoRow repos
+    _       -> putStrLn "Unknown format"
+
+  where
+    printRepoRow r =
+        let lang = case language r of
+                    Just l  -> l
+                    Nothing -> "N/A"
+        in putStrLn $ padRight 30 (take 28 $ name r)
+                   ++ padRight 10 (show $ stargazersCount r)
+                   ++ lang
+
+    padRight :: Int -> String -> String
+    padRight n s = s ++ replicate (n - length s) ' '
+</file>
+
+<file path="src/Utils/.keep">
+
+</file>
+
+<file path="test/.keep">
+
+</file>
+
+<file path=".envrc">
+use flake
+</file>
+
+<file path=".stylish-haskell.yaml">
+steps:
+  - simple_align:
+      cases: true
+      top_level_patterns: true
+      records: true
+
+  - imports:
+      align: global
+      list_align: new_line
+      pad_module_names: true
+      long_list_align: new_line_multiline
+      empty_list_align: inherit
+      list_padding: 4
+      separate_lists: true
+      space_surround: false
+
+  - language_pragmas:
+      style: vertical
+      align: true
+      remove_redundant: true
+
+  - tabs:
+      spaces: 4
+
+  - trailing_whitespace: {}
+
+columns: 100
+
+newline: native
+</file>
+
+<file path=".version">
+0.1.1
+</file>
+
+<file path="flake.lock">
+{
+  "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1786599213,
+        "narHash": "sha256-yNJd40f11EzXBjSByCB7IPpeFFAdeoSKKM67dGkfFoU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "0e251e24a4f24e036a084b6b4b2d2491af4167f4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+</file>
+
+<file path="floskell.json">
+{
+  "language": "Haskell2010",
+  "extensions": [],
+  "style": "gibiansky",
+  "formatting": {}
+}
+</file>
+
+<file path="fourmolu.yaml">
+indentation: 4
+
+column-limit: 100
+
+function-arrows: leading
+
+comma-style: leading
+
+record-style: aligned
+
+import-export-style: leading
+import-grouping: by-scope-then-qualified
+
+indent-wheres: true
+
+record-brace-space: true
+
+newlines-between-decls: 2
+
+haddock-style: single-line
+haddock-style-module: single-line
+haddock-location-signature: leading
+
+let-style: inline
+in-style: left-align
+
+if-style: indented
+
+single-constraint-parens: never
+single-deriving-parens: never
+
+sort-constraints: false
+sort-derived-classes: false
+sort-deriving-clauses: false
+
+trailing-section-operators: true
+
+unicode: never
+
+respectful: false
+</file>
+
+<file path="src/GitHub/Client.hs">
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module GitHub.Client where
+
+import           Data.Aeson                (eitherDecode)
+
+import qualified Data.ByteString.Char8     as BC
+import qualified Data.ByteString.Lazy      as BSL
+
+import           Network.HTTP.Client
+    (Manager, Request, Response, httpLbs, parseRequest, requestHeaders, responseBody)
+import           Network.HTTP.Client.TLS   (newTlsManager)
+import           Network.HTTP.Types.Header (HeaderName, hAuthorization, hUserAgent)
+
+import           GitHub.Types              (Repo, User)
+
+-- httpLbs takes in a request & a manager
+-- & it makes a connection & returns an IO response
+
+getUser :: String -> Maybe String -> IO (Either String User)
+getUser username mToken = do
+    manager :: Manager <- newTlsManager
+
+    initialRequest :: Request <- parseRequest $ "https://api.github.com/users/" ++ username
+
+    let baseHeaders :: [(HeaderName, BC.ByteString)] = [(hUserAgent, "gh-api-cli")]
+
+    let authHeaders ::  [(HeaderName, BC.ByteString)] = case mToken of
+            Nothing    -> []
+            Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request :: Request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+
+    response :: Response BSL.ByteString <- httpLbs request manager
+
+    return $ eitherDecode (responseBody response)
+
+getRepos :: String -> Maybe String -> IO (Either String [Repo])
+getRepos username mToken = do
+    manager :: Manager <- newTlsManager
+
+    initialRequest :: Request <- parseRequest
+        $ "https://api.github.com/users/" ++ username ++ "/repos?per_page=100"
+
+    let baseHeaders :: [(HeaderName, BC.ByteString)] = [(hUserAgent, "gh-api-cli")]
+    let authHeaders :: [(HeaderName, BC.ByteString)] = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request :: Request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+
+    {-
+    response <- httpLbs request manager
+    BC.putStrLn $ BSL.toStrict (responseBody response)
+    -}
+
+    (eitherDecode . responseBody) <$> httpLbs request manager
+
+getStarredRepos :: String -> Maybe String -> IO (Either String [Repo])
+getStarredRepos username mToken = do
+    manager <- newTlsManager
+    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/starred?per_page=100"
+
+    let baseHeaders = [(hUserAgent, "gh-api-cli")]
+    let authHeaders = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+    (eitherDecode . responseBody) <$> httpLbs request manager
+
+getFollowers :: String -> Maybe String -> IO (Either String [User])
+getFollowers username mToken = do
+    manager <- newTlsManager
+    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/followers?per_page=100"
+
+    let baseHeaders = [(hUserAgent, "gh-api-cli")]
+    let authHeaders = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+
+    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
+    (eitherDecode . responseBody) <$> httpLbs request manager
+</file>
+
+<file path=".gitattributes">
+*.cabal linguist-language=Cabal
+</file>
+
+<file path=".gitignore">
+.devenv
+dist-newstyle
+time-1.16.0.1
+.direnv
+</file>
+
+<file path="README.md">
+## GH-API-CLI
+
+A terminal tool for querying the github API.
+
+## Installation
+
+In your `flake.nix`:
+
+```Nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    gh-api-cli.url = "github:givikuna/gh-api-cli";
+  };
+}
+```
+
+Now, its available in anything as:
+
+```Nix
+{ inputs, ... }: {
+  environment.systemPackages = [
+    inputs.gh-api-cli.packages.${pkgs.system}.default
+  ];
+}
+```
+
+## Documentation
+
+### Globals
+
+- `--help` displays a help message
+- `--version` displays the version of the software you are on
+- `--token={token}` github personal access token for higher rate limits & priv repo access (just use a VPN to avoid rate limits, don't sell your data, don't be a sheep)
+- `--format={json|table}` output done in a pretty table form or a json form. Defaults to table.
+- `--limit={number}` maximum number of items to fetch from the API (pagination cap). Defaults to 1000 by default for now.
+
+### Users
+
+```
+gh-api-cli --user={username} --{data} [--constraints] [-options]
+```
+
+There are a lot of available data tags:
+
+- `--total-stars` - lists the total number of stars the user has
+- `--most-used-lang` - lists the most used languages by percentage
+  - Options:
+    - `-a` lists percentage of every single language (default)
+    - `-x` lists the top 10 languages
+    - `-1` lists the most used language
+    - `-2` lists top 2
+    - `-3` lists top 3
+    - `-4` lists top 4
+    - `-5` lists top 5
+    - `-6` lists top 6
+    - `-7` lists top 7
+    - `-8` lists top 8
+    - `-9` lists top 9
+  - Constraints:
+    - `--exclude={lang1}` excludes lang1
+    - `--exclude={lang1,lang2,lang3,...}` excludes however many languages you put there
+  - Sorting (Optional):
+    - `--sort={field}` - `percentage` - this is on by default, `name` - alphabetical
+    - `--order={asc|desc}` - Order direction, `desc` for down, `asc` for up. `desc` is default for `percentage` and `asc` is default for `name`.
+- `--repos` - lists every repository
+  - Options:
+    - `-a` lists every single repo (default)
+    - `-x` lists the top 10 repos
+    - `-1` lists top repos
+    - `-2` lists top 2
+    - `-3` lists top 3
+    - `-4` lists top 4
+    - `-5` lists top 5
+    - `-6` lists top 6
+    - `-7` lists top 7
+    - `-8` lists top 8
+    - `-9` lists top 9
+  - Constraints:
+    - `--exclude-lang={lang}` excludes all repos that use the `lang` language
+    - `--exclude-lang={lang1,lang2}` excludes all repos that use `lang1` or `lang2`
+    - `--exclude-main-lang={lang}` excludes all repos whose main language is `lang`
+    - `--exclude-xor-lang={lang,lang2}` excludes all repos that use `lang` xor `lang2`
+  - Sorting:
+    - `--sort={field}` - `name`, `created`, `updated`, `pushed`, `stars`, `forks`, `size`
+    - `--order={asc|desc}` - Direction. `desc` is default for everything besides `name`. All of this should be very self-explanatory.
+  - Filters:
+    - `--filter-name-substr={pattern}` - include only repos whose name matches the given substring
+    - `--filter-name={pattern}` - include only repos that match the regex.
+    - `--filter-created-after={YYYY-MM-DD}` - include only repos created after this date
+    - `--filter-created-before={YYYY-MM-DD}` - include only repos created before this date.
+    - `--filter-updated-after={YYYY-MM-DD}` - include only repos last updated on or after this date.
+    - `--filter-updated-before={YYYY-MM-DD}` - Include repos last updated on or before this date.
+    - `--filter-updated-visibility={public|private|internal|all}` - include repos with given visibility. Default is `all`
+    - `--filter-fork={true|false}` - include only forked repos or only non-forked repos. By default it'll show all.
+    - `--filter-archived={true|false}` - include only archived (`true`) or only active (`false`) repos. By default it'll show all.
+    - `--filter-language={lang}` - include repos that use the given language (any occurrence). Can be repeated or comma-separated for multiple languages (uses OR logic).
+    - `--filter-main-language={lang}` - only includes repos whose main language is `lang`.
+  - Caveats:
+    - Exclude filters take precedence over include filters. If both `--exclude-lang` and `--filter-language` are given, exclude removes matching repos after inclusion.
+- `--stars` - lists every starred repository
+  - Options:
+    - `-a` list all starred repos (default).
+    - `-x` list top 10 starred repos.
+    - `-1` through `-9` list top $N$ starred repos.
+  - Sorting:
+    - `--sort={field}` sort starred repos by:
+      - `starred_at` the date the repo was starred (default, `desc`)
+      - `name` repo name (`asc`)
+      - `stars` number of stars (`desc`)
+      - `updated` the `updated_at` property of the repo (`desc`)
+      - `created` when the repo was created (`desc`)
+    - `--order={asc|desc}` self explanatory
+  - Filters:
+- `--followers` - lists every follower
+  - Options:
+    - `-a` list all
+    - `-x` list top 10
+    - `-1` through `-9` you know what this does
+  - Sorting:
+    - `--sort={field}`, with fields of `name`, `joined`, `followers`, and `repos` (repo count).
+    - `--order={asc|desc}`
+  - Filters:
+    - `--filter-name={pattern}` only those that match the regex
+    - `--filter-name-substr={pattern}` only those whose username contains the substring
+    - `--filter-company={pattern}` only followers whose company matches the substring
+- `--following` - lists everyone the user follows
+  - Identical to `--followers`, just lists people that the user follows instead
+- `--orgs` - lists every organization the user is in
+  - Identical to `--followers` but doesn't feature the filter by company option
+
+### Organizations
+
+- I will figure this out whenever I'm not tired
+</file>
+
+<file path="flake.nix">
+{
+  description = "gh-api-cli";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+
+        gh-api-cli = pkgs.haskellPackages.callCabal2nix "gh-api-cli" ./. { };
+      in
+      {
+        packages.default = gh-api-cli;
+
+        apps.default = flake-utils.lib.mkApp {
+          drv = gh-api-cli;
+        };
+
+        devShells.default = pkgs.mkShell {
+          inputsFrom = [ gh-api-cli.env ];
+
+          buildInputs = with pkgs; [
+            ghc
+            haskell-language-server
+            cabal-install
+            stylish-haskell
+            haskellPackages.cabal-gild
+            zlib
+            pkg-config
+          ];
+        };
+      }
+    );
+}
+</file>
+
+<file path="src/CLI/Parser.hs">
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module CLI.Parser where
+
+import           Data.List (isPrefixOf, stripPrefix)
+
+data DataTarget
+    = TotalStars
+    | MostUsedLang
+    | Repos
+    | Stars
+    | Followers
+    | Following
+    | Orgs
+    | UnspecifiedTarget
+    deriving (Show, Eq)
+
+data SortOrder = Asc | Desc deriving (Show, Eq)
+
+data AppConfig = AppConfig
+    { cfgUser                :: Maybe String
+    , cfgTarget              :: DataTarget
+    , cfgToken               :: Maybe String
+    , cfgFormat              :: String
+    , cfgLimit               :: Int
+    , cfgShowHelp            :: Bool
+    , cfgShowVer             :: Bool
+
+    --
+
+    , cfgSort                :: Maybe String
+    , cfgOrder               :: Maybe SortOrder
+
+    --
+
+    , cfgExcludeLangs        :: [String]
+    , cfgExcludeMainLang     :: [String]
+    , cfgExcludeXorLang      :: [String]
+
+    , cfgFilterLangs         :: [String]
+    , cfgFilterMainLang      :: Maybe String
+
+    --
+
+    , cfgFilterNameSubstr    :: Maybe String
+    , cfgFilterNameRegex     :: Maybe String
+    , cfgFilterCompany       :: Maybe String
+
+    --
+
+    , cfgFilterCreatedAfter  :: Maybe String
+    , cfgFilterCreatedBefore :: Maybe String
+    , cfgFilterUpdatedAfter  :: Maybe String
+    , cfgFilterUpdatedBefore :: Maybe String
+
+    --
+
+    , cfgFilterVisibility    :: String
+    , cfgFilterFork          :: Maybe Bool
+    , cfgFilterArchived      :: Maybe Bool
+    } deriving (Show)
+
+defaultConfig :: AppConfig
+defaultConfig = AppConfig
+    { cfgUser                = Nothing
+    , cfgTarget              = UnspecifiedTarget
+    , cfgToken               = Nothing
+    , cfgFormat              = "table"
+    , cfgLimit               = 1000
+    , cfgShowHelp            = False
+    , cfgShowVer             = False
+
+    , cfgSort                = Nothing
+    , cfgOrder               = Nothing
+
+    , cfgExcludeLangs        = []
+    , cfgExcludeMainLang     = []
+    , cfgExcludeXorLang      = []
+    , cfgFilterLangs         = []
+    , cfgFilterMainLang      = Nothing
+
+    , cfgFilterNameSubstr    = Nothing
+    , cfgFilterNameRegex     = Nothing
+    , cfgFilterCompany       = Nothing
+
+    , cfgFilterCreatedAfter  = Nothing
+    , cfgFilterCreatedBefore = Nothing
+    , cfgFilterUpdatedAfter  = Nothing
+    , cfgFilterUpdatedBefore = Nothing
+
+    , cfgFilterVisibility    = "all"
+    , cfgFilterFork          = Nothing
+    , cfgFilterArchived      = Nothing
+    }
+
+splitBy :: Char -> String -> [String]
+splitBy _ "" = []
+splitBy delim str =
+    let (start, rest) :: ([Char], [Char]) = break (== delim) str
+        (_, remain) = span (== delim) rest
+    in start : splitBy delim remain
+
+parseArgs :: [String] -> AppConfig -> AppConfig
+parseArgs [] config = config
+parseArgs (arg : rest) config =
+    case arg of
+        "--help"            -> parseArgs rest (config { cfgShowHelp = True })
+        "--version"         -> parseArgs rest (config { cfgShowVer = True })
+        "-v"                -> parseArgs rest (config { cfgShowVer = True })
+
+        "--total-stars"     -> parseArgs rest (config { cfgTarget = TotalStars })
+        "--most-used-lang"  -> parseArgs rest (config { cfgTarget = MostUsedLang })
+        "--most-used-langs" -> parseArgs rest (config { cfgTarget = MostUsedLang })
+        "--repos"           -> parseArgs rest (config { cfgTarget = Repos })
+        "--stars"           -> parseArgs rest (config { cfgTarget = Stars })
+        "--followers"       -> parseArgs rest (config { cfgTarget = Followers })
+        "--following"       -> parseArgs rest (config { cfgTarget = Following })
+        "--orgs"            -> parseArgs rest (config { cfgTarget = Orgs })
+
+        "-a" -> parseArgs rest (config { cfgLimit = maxBound })
+        "-x" -> parseArgs rest (config { cfgLimit = 10 })
+        "-1" -> parseArgs rest (config { cfgLimit = 1 })
+        "-2" -> parseArgs rest (config { cfgLimit = 2 })
+        "-3" -> parseArgs rest (config { cfgLimit = 3 })
+        "-4" -> parseArgs rest (config { cfgLimit = 4 })
+        "-5" -> parseArgs rest (config { cfgLimit = 5 })
+        "-6" -> parseArgs rest (config { cfgLimit = 6 })
+        "-7" -> parseArgs rest (config { cfgLimit = 7 })
+        "-8" -> parseArgs rest (config { cfgLimit = 8 })
+        "-9" -> parseArgs rest (config { cfgLimit = 9 })
+
+        "--order=asc"               -> parseArgs rest (config { cfgOrder = Just Asc })
+        "--order=desc"              -> parseArgs rest (config { cfgOrder = Just Desc })
+        "--filter-fork=true"        -> parseArgs rest (config { cfgFilterFork = Just True })
+        "--filter-fork=false"       -> parseArgs rest (config { cfgFilterFork = Just False })
+        "--filter-archived=true"    -> parseArgs rest (config { cfgFilterArchived = Just True })
+        "--filter-archived=false"   -> parseArgs rest (config { cfgFilterArchived = Just False })
+
+        _
+            | Just username <- stripPrefix "--user=" arg
+            -> parseArgs rest $ config
+                { cfgUser = Just username }
+
+            | Just token <- stripPrefix "--token=" arg
+            -> parseArgs rest $ config
+                { cfgToken = Just token }
+
+            | Just format <- stripPrefix "--format=" arg
+            -> parseArgs rest $ config
+                { cfgFormat = format }
+
+            | Just limitStr <- stripPrefix "--limit=" arg
+            -> parseArgs rest $ config
+                { cfgLimit = read limitStr }
+
+            | Just sortStr <- stripPrefix "--sort=" arg
+            -> parseArgs rest $ config
+                { cfgSort = Just sortStr }
+
+            | Just exclude <- stripPrefix "--exclude=" arg
+            -> parseArgs rest $ config
+                { cfgExcludeLangs = cfgExcludeLangs config ++ splitBy ',' exclude }
+
+            | Just excludeLangs <- stripPrefix "--exclude-lang=" arg
+            -> parseArgs rest $ config
+                { cfgExcludeLangs = cfgExcludeLangs config ++ splitBy ',' excludeLangs }
+
+            | Just excludeMain <- stripPrefix "--exclude-main-lang=" arg
+            -> parseArgs rest $ config
+                { cfgExcludeMainLang = cfgExcludeMainLang config ++ splitBy ',' excludeMain }
+
+            | Just excludeXor <- stripPrefix "--exclude-xor-lang=" arg
+            -> parseArgs rest $ config
+                { cfgExcludeXorLang = cfgExcludeXorLang config ++ splitBy ',' excludeXor }
+
+            | Just nameSub <- stripPrefix "--filter-name-substr=" arg
+            -> parseArgs rest $ config
+                { cfgFilterNameSubstr = Just nameSub }
+
+            | Just nameReg <- stripPrefix "--filter-name=" arg
+            -> parseArgs rest $ config
+                { cfgFilterNameRegex = Just nameReg }
+
+            | Just company <- stripPrefix "--filter-company=" arg
+            -> parseArgs rest $ config
+                { cfgFilterCompany = Just company }
+
+            | Just cAfter <- stripPrefix "--filter-created-after=" arg
+            -> parseArgs rest $ config
+                { cfgFilterCreatedAfter = Just cAfter }
+
+            | Just cBefore <- stripPrefix "--filter-created-before=" arg
+            -> parseArgs rest $ config
+                { cfgFilterCreatedBefore = Just cBefore }
+
+            | Just uAfter <- stripPrefix "--filter-updated-after=" arg
+            -> parseArgs rest $ config
+                { cfgFilterUpdatedAfter = Just uAfter }
+
+            | Just uBefore <- stripPrefix "--filter-updated-before=" arg
+            -> parseArgs rest $ config
+                { cfgFilterUpdatedBefore = Just uBefore }
+
+            -- Enums & Language Filters
+            | Just vis <- stripPrefix "--filter-updated-visibility=" arg
+            -> parseArgs rest $ config
+                { cfgFilterVisibility = vis }
+
+            | Just fLangs <- stripPrefix "--filter-language=" arg
+            -> parseArgs rest $ config
+                { cfgFilterLangs = cfgFilterLangs config ++ splitBy ',' fLangs }
+
+            | Just fMainLang <- stripPrefix "--filter-main-language=" arg
+            -> parseArgs rest $ config
+                { cfgFilterMainLang = Just fMainLang }
+
+            | "-" `isPrefixOf` arg
+            -> error $ "unknown option: " ++ arg
+
+            | otherwise
+            -> parseArgs rest config
+</file>
+
+<file path="gh-api-cli.cabal">
+cabal-version: 3.0
+-- The cabal-version field refers to the version of the .cabal specification,
+-- and can be different from the cabal-install (the tool) version and the
+-- Cabal (the library) version you are using. As such, the Cabal (the library)
+-- version used must be equal or greater than the version stated in this field.
+-- Starting from the specification version 2.2, the cabal-version field must be
+-- the first thing in the cabal file.
+-- Initial package description 'gh-api-cli' generated by
+-- 'cabal init'. For further documentation, see:
+--   http://haskell.org/cabal/users-guide/
+--
+-- The name of the package.
+name: gh-api-cli
+-- The package version.
+-- See the Haskell package versioning policy (PVP) for standards
+-- guiding when and how versions should be incremented.
+-- https://pvp.haskell.org
+-- PVP summary:     +-+------- breaking API changes
+--                  | | +----- non-breaking API additions
+--                  | | | +--- code changes with no API change
+version: 0.1.0.0
+-- A short (one-line) description of the package.
+-- synopsis:
+-- A longer description of the package.
+-- description:
+-- The license under which the package is released.
+license: NONE
+-- The package author(s).
+author: Givi
+-- An email address to which users can send suggestions, bug reports, and patches.
+maintainer: gvtsvariani@gmail.com
+-- A copyright notice.
+-- copyright:
+build-type: Simple
+-- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
+extra-doc-files: README.md
+
+-- Extra source files to be distributed with the package, such as examples, or a tutorial module.
+-- extra-source-files:
+common warnings
+  ghc-options: -Wall
+
+executable gh-api-cli
+  -- Import common warning flags.
+  import: warnings
+  -- .hs or .lhs file containing the Main module.
+  main-is: Main.hs
+  -- Modules included in this executable, other than Main.
+  other-modules:
+    CLI.Parser
+    GitHub.Client
+    GitHub.Engine
+    GitHub.Types
+    Output.Format
+
+  -- LANGUAGE extensions used by modules in this package.
+  -- other-extensions:
+  -- Other library packages from which modules are imported.
+  build-depends:
+    aeson,
+    base ^>=4.20.2.0,
+    bytestring,
+    file-embed,
+    http-client,
+    http-client-tls,
+    http-types,
+    time,
+
+  -- Directories containing source files.
+  hs-source-dirs:
+    app
+    src
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+</file>
+
+<file path="src/GitHub/Types.hs">
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module GitHub.Types where
+
+import           Data.Aeson
+    ( FromJSON (..)
+    , Options (..)
+    , ToJSON (..)
+    , camelTo2
+    , defaultOptions
+    , genericParseJSON
+    , genericToJSON
+    )
+
+import           Data.Time    (UTCTime)
+
+import           GHC.Generics (Generic)
+
+jsonOptions :: Options
+jsonOptions = defaultOptions{fieldLabelModifier = camelTo2 '_'}
+
+data User = User
+    { login       :: String,
+      followers   :: Int,
+      following   :: Int,
+      publicRepos :: Int
+    }
+    deriving (Show, Generic)
+
+instance FromJSON User where
+    parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON User where
+    toJSON = genericToJSON jsonOptions
+
+data Repo = Repo
+    { name            :: String,
+      stargazersCount :: Int,
+      forksCount      :: Int,
+      size            :: Int,
+      fork            :: Bool,
+      archived        :: Bool,
+      visibility      :: String,
+      language        :: Maybe String,
+      languagesUrl    :: String,
+      createdAt       :: UTCTime,
+      updatedAt       :: UTCTime,
+      pushedAt        :: UTCTime
+    }
+    deriving (Show, Generic)
+
+instance FromJSON Repo where
+    parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Repo where
+    toJSON = genericToJSON jsonOptions
+
+data LangStat = LangStat
+    { langName  :: String
+    , langCount :: Int
+    , langPerc  :: Float
+    } deriving (Show, Eq)
+</file>
+
+<file path="src/GitHub/Engine.hs">
+module GitHub.Engine where
+
+import           Data.List    (group, sort, sortOn)
+import           Data.Maybe   (fromMaybe)
+import           Data.Ord     (Down (..))
+
+import           CLI.Parser   (AppConfig (..), SortOrder (..))
+
+import           GitHub.Types (LangStat (..), Repo (..))
+
+processRepos :: AppConfig -> [Repo] -> [Repo]
+processRepos config repos =
+    let
+        noExcludedLangs = if null (cfgExcludeLangs config)
+            then repos
+            else
+                filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeLangs config)) (language r)) repos
+
+        noExcludedMain = if null (cfgExcludeMainLang config)
+            then noExcludedLangs
+            else
+                filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeMainLang config)) (language r)) noExcludedLangs
+
+        filteredForks = case cfgFilterFork config of
+                Nothing    -> noExcludedMain
+                Just True  -> filter fork noExcludedMain
+                Just False -> filter (\r -> not (fork r)) noExcludedMain
+
+        filteredArchived = case cfgFilterArchived config of
+            Nothing    -> filteredForks
+            Just True  -> filter archived filteredForks
+            Just False -> filter (\r -> not (archived r)) filteredForks
+
+        filteredNameSub = case cfgFilterNameSubstr config of
+            Nothing   -> filteredArchived
+            Just sub  -> filter (\r -> sub `isInfixOf` name r) filteredArchived
+              where isInfixOf s t = any (s `isPrefixOf`) (tails t)
+                    isPrefixOf [] _          = True
+                    isPrefixOf _ []          = False
+                    isPrefixOf (x:xs) (y:ys) = x == y && isPrefixOf xs ys
+                    tails []         = [[]]
+                    tails xxs@(_:xs) = xxs : tails xs
+
+        filteredLangs = if null (cfgFilterLangs config)
+            then filteredNameSub
+            else filter (\r -> maybe False (\l -> l `elem` cfgFilterLangs config) (language r)) filteredNameSub
+
+        filteredMainLang = case cfgFilterMainLang config of
+            Nothing   -> filteredLangs
+            Just lang -> filter (\r -> maybe False (== lang) (language r)) filteredLangs
+
+        sortField = fromMaybe "stars" (cfgSort config)
+        orderDir  = fromMaybe Desc (cfgOrder config)
+
+        applyOrder :: Ord b => (Repo -> b) -> [Repo] -> [Repo]
+        applyOrder selector lst = case orderDir of
+            Asc  -> sortOn selector lst
+            Desc -> sortOn (\r -> Down (selector r)) lst
+
+        sortedRepos = case sortField of
+            "name"    -> sortOn name filteredMainLang
+            "size"    -> applyOrder size filteredMainLang
+            "forks"   -> applyOrder forksCount filteredMainLang
+            "created" -> applyOrder createdAt filteredMainLang
+            "updated" -> applyOrder updatedAt filteredMainLang
+            "pushed"  -> applyOrder pushedAt filteredMainLang
+            _         -> applyOrder stargazersCount filteredMainLang
+
+        limitedRepos = take (cfgLimit config) sortedRepos
+
+    in limitedRepos
+
+getTotalStars :: [Repo] -> Int
+getTotalStars repos = sum $ map stargazersCount repos
+
+getLanguageStats :: AppConfig -> [Repo] -> [LangStat]
+getLanguageStats config repos = take (cfgLimit config) sortedStats
+  where
+    langs = [ l | r <- repos, Just l <- [language r] ]
+    totalLangs = length langs
+
+    grouped = group (sort langs)
+    baseStats = map makeStat grouped
+
+    makeStat g =
+        let count = length g
+            perc  = (fromIntegral count / fromIntegral totalLangs) * 100.0
+        in LangStat (head g) count perc
+
+    sortField = fromMaybe "percentage" (cfgSort config)
+    orderDir  = case cfgOrder config of
+        Just o  -> o
+        Nothing -> if sortField == "name" then Asc else Desc
+
+    sortedStats = case (sortField, orderDir) of
+        ("name", Asc)  -> sortOn langName baseStats
+        ("name", Desc) -> sortOn (\s -> Down (langName s)) baseStats
+        (_, Asc)       -> sortOn langPerc baseStats
+        (_, Desc)      -> sortOn (\s -> Down (langPerc s)) baseStats
+</file>
+
+<file path="app/Main.hs">
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
+
+module Main (main) where
+
+-- import           Data.List          (group, sort)
+
+import           Data.FileEmbed     (embedStringFile)
+
+import           System.Environment (getArgs)
+import           System.Exit        (exitFailure)
+
+import           CLI.Parser         (AppConfig (..), DataTarget (..), defaultConfig, parseArgs)
+
+import           GitHub.Client      (getRepos, getUser)
+import           GitHub.Engine      (getLanguageStats, getTotalStars, processRepos)
+import           GitHub.Types       (LangStat (..), Repo (..))
+
+import           Text.Printf
+
+appVersion :: String
+appVersion = $(embedStringFile ".version")
+
+main :: IO ()
+main = do
+    args :: [String] <- getArgs
+    let config :: AppConfig = parseArgs args defaultConfig
+
+    if cfgShowHelp config then do
+        putStrLn "usage: gh-api-cli --user<username> [TARGET] [OPTIONs]"
+        putStrLn "targets: --total-stars, --repos, --followers, --most-used-lang"
+
+    else if cfgShowVer config then do
+        putStrLn $ "gh-api-cli v" ++ filter (/= '\n') appVersion
+
+    else
+        case cfgUser config of
+        Nothing -> do
+            putStrLn "ERROR: Provide an username. Example: --user=KrakenTheJacken"
+            exitFailure
+
+        Just username -> do
+            putStrLn $ "Target acquired: " ++ username
+
+            case cfgTarget config of
+                UnspecifiedTarget -> do
+                    result <- getUser username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: Failed to parse GitHub response"
+                            putStrLn err
+                            exitFailure
+                        Right user -> do
+                            putStrLn "YAY the USER has been FETCHED"
+                            print user
+                Repos -> do
+                    putStrLn "fetching repos..."
+                    result <- getRepos username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: Failed to fetch repos"
+                            putStrLn err
+                            exitFailure
+                        Right rawRepos -> do
+                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            putStrLn $ "Found " ++ show (length finalRepos) ++ " repos!"
+
+                            mapM_ (\r ->
+                                    putStrLn $ name r ++ " - Stars: " ++ show (stargazersCount r)) finalRepos
+                MostUsedLang -> do
+                    putStrLn "fetching repos to calculate language statistics..."
+                    result <- getRepos username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: Failed to fetch repos"
+                            putStrLn err
+                            exitFailure
+                        Right rawRepos -> do
+                            let finalRepos = processRepos config rawRepos
+                            let stats = getLanguageStats config finalRepos
+
+                            putStrLn $ "Language stats based on " ++ show (length finalRepos) ++ " repos:"
+                            mapM_ (\stat ->
+                                -- printf "%.2f%%" formats the float to 2 decimal places
+                                putStrLn $ langName stat ++ ": "
+                                        ++ printf "%.2f%%" (langPerc stat)
+                                        ++ " (" ++ show (langCount stat) ++ " repos)"
+                                ) stats
+                Stars -> do
+                    putStrLn "..."
+                Followers -> do
+                    putStrLn "..."
+                Following -> do
+                    putStrLn "..."
+                Orgs -> do
+                    putStrLn "..."
+                TotalStars -> do
+                    putStrLn "fetching repos to calculate total stars..."
+                    result <- getRepos username $ cfgToken config
+                    case result of
+                        Left err -> do
+                            putStrLn "ERROR: failed to fetch repos"
+                            putStrLn err
+                            exitFailure
+                        Right rawRepos -> do
+                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            let total :: Int = getTotalStars finalRepos
+                            putStrLn $ "total stars (across " ++ show (length finalRepos) ++ " repos): " ++ show total
+</file>
+
+</files>

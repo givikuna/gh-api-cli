@@ -4,81 +4,63 @@
 module GitHub.Client where
 
 import           Data.Aeson                (eitherDecode)
-
 import qualified Data.ByteString.Char8     as BC
-import qualified Data.ByteString.Lazy      as BSL
+import qualified Data.Map                  as Map
 
 import           Network.HTTP.Client
-    (Manager, Request, Response, httpLbs, parseRequest, requestHeaders, responseBody)
+    (Request, httpLbs, parseRequest, requestHeaders, responseBody)
 import           Network.HTTP.Client.TLS   (newTlsManager)
-import           Network.HTTP.Types.Header (HeaderName, hAuthorization, hUserAgent)
+import           Network.HTTP.Types.Header (hAuthorization, hUserAgent)
 
-import           GitHub.Types              (Repo, User)
+import           GitHub.Types              (Org, Repo, User)
 
--- httpLbs takes in a request & a manager
--- & it makes a connection & returns an IO response
+buildRequest :: String -> Maybe String -> IO Request
+buildRequest url mToken = do
+    initialRequest <- parseRequest url
+    let baseHeaders = [(hUserAgent, "gh-api-cli")]
+    let authHeaders = case mToken of
+                Nothing    -> []
+                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+    return initialRequest { requestHeaders = baseHeaders ++ authHeaders }
 
 getUser :: String -> Maybe String -> IO (Either String User)
 getUser username mToken = do
-    manager :: Manager <- newTlsManager
-
-    initialRequest :: Request <- parseRequest $ "https://api.github.com/users/" ++ username
-
-    let baseHeaders :: [(HeaderName, BC.ByteString)] = [(hUserAgent, "gh-api-cli")]
-
-    let authHeaders ::  [(HeaderName, BC.ByteString)] = case mToken of
-            Nothing    -> []
-            Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
-
-    let request :: Request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
-
-    response :: Response BSL.ByteString <- httpLbs request manager
-
-    return $ eitherDecode (responseBody response)
+    manager <- newTlsManager
+    req <- buildRequest ("https://api.github.com/users/" ++ username) mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
 getRepos :: String -> Maybe String -> IO (Either String [Repo])
 getRepos username mToken = do
-    manager :: Manager <- newTlsManager
+    manager <- newTlsManager
+    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/repos?per_page=100") mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
-    initialRequest :: Request <- parseRequest
-        $ "https://api.github.com/users/" ++ username ++ "/repos?per_page=100"
-
-    let baseHeaders :: [(HeaderName, BC.ByteString)] = [(hUserAgent, "gh-api-cli")]
-    let authHeaders :: [(HeaderName, BC.ByteString)] = case mToken of
-                Nothing    -> []
-                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
-
-    let request :: Request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
-
-    {-
-    response <- httpLbs request manager
-    BC.putStrLn $ BSL.toStrict (responseBody response)
-    -}
-
-    (eitherDecode . responseBody) <$> httpLbs request manager
+getRepoLanguages :: String -> Maybe String -> IO (Either String (Map.Map String Int))
+getRepoLanguages url mToken = do
+    manager <- newTlsManager
+    req <- buildRequest url mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
 getStarredRepos :: String -> Maybe String -> IO (Either String [Repo])
 getStarredRepos username mToken = do
     manager <- newTlsManager
-    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/starred?per_page=100"
-
-    let baseHeaders = [(hUserAgent, "gh-api-cli")]
-    let authHeaders = case mToken of
-                Nothing    -> []
-                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
-
-    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
-    (eitherDecode . responseBody) <$> httpLbs request manager
+    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/starred?per_page=100") mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
 getFollowers :: String -> Maybe String -> IO (Either String [User])
 getFollowers username mToken = do
     manager <- newTlsManager
-    initialRequest <- parseRequest $ "https://api.github.com/users/" ++ username ++ "/followers?per_page=100"
+    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/followers?per_page=100") mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
-    let baseHeaders = [(hUserAgent, "gh-api-cli")]
-    let authHeaders = case mToken of
-                Nothing    -> []
-                Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
+getFollowing :: String -> Maybe String -> IO (Either String [User])
+getFollowing username mToken = do
+    manager <- newTlsManager
+    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/following?per_page=100") mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager
 
-    let request = initialRequest { requestHeaders = baseHeaders ++ authHeaders }
-    (eitherDecode . responseBody) <$> httpLbs request manager
+getOrgs :: String -> Maybe String -> IO (Either String [Org])
+getOrgs username mToken = do
+    manager <- newTlsManager
+    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/orgs?per_page=100") mToken
+    (eitherDecode . responseBody) <$> httpLbs req manager

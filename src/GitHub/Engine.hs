@@ -1,12 +1,12 @@
 module GitHub.Engine where
 
-import           Data.List    (group, sort, sortOn)
-import           Data.Maybe   (fromMaybe)
-import           Data.Ord     (Down (..))
+import           Data.List       (sortOn)
+import qualified Data.Map.Strict as Map
+import           Data.Maybe      (fromMaybe)
+import           Data.Ord        (Down (..))
 
-import           CLI.Parser   (AppConfig (..), SortOrder (..))
-
-import           GitHub.Types (LangStat (..), Repo (..))
+import           CLI.Parser      (AppConfig (..), SortOrder (..))
+import           GitHub.Types    (LangStat (..), Repo (..))
 
 processRepos :: AppConfig -> [Repo] -> [Repo]
 processRepos config repos =
@@ -66,26 +66,21 @@ processRepos config repos =
             "pushed"  -> applyOrder pushedAt filteredMainLang
             _         -> applyOrder stargazersCount filteredMainLang
 
-        limitedRepos = take (cfgLimit config) sortedRepos
-
-    in limitedRepos
+    in take (cfgLimit config) sortedRepos
 
 getTotalStars :: [Repo] -> Int
 getTotalStars repos = sum $ map stargazersCount repos
 
-getLanguageStats :: AppConfig -> [Repo] -> [LangStat]
-getLanguageStats config repos = take (cfgLimit config) sortedStats
+getLanguageStats :: AppConfig -> [Map.Map String Int] -> [LangStat]
+getLanguageStats config langMaps = take (cfgLimit config) sortedStats
   where
-    langs = [ l | r <- repos, Just l <- [language r] ]
-    totalLangs = length langs
+    combinedMap = Map.unionsWith (+) langMaps
+    totalBytes = sum (Map.elems combinedMap)
 
-    grouped = group (sort langs)
-    baseStats = map makeStat grouped
-
-    makeStat g =
-        let count = length g
-            perc  = (fromIntegral count / fromIntegral totalLangs) * 100.0
-        in LangStat (head g) count perc
+    baseStats = if totalBytes == 0
+        then []
+        else [ LangStat langName bytes ((fromIntegral bytes / fromIntegral totalBytes) * 100.0)
+             | (langName, bytes) <- Map.toList combinedMap ]
 
     sortField = fromMaybe "percentage" (cfgSort config)
     orderDir  = case cfgOrder config of

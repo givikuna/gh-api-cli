@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module GitHub.Types where
 
@@ -15,17 +16,17 @@ import           Data.Aeson
     )
 
 import           Data.Time    (UTCTime)
-
 import           GHC.Generics (Generic)
 
 jsonOptions :: Options
 jsonOptions = defaultOptions{fieldLabelModifier = camelTo2 '_'}
 
 data User = User
-    { login       :: String,
-      followers   :: Int,
-      following   :: Int,
-      publicRepos :: Int
+    { login       :: String
+    , followers   :: Maybe Int
+    , following   :: Maybe Int
+    , publicRepos :: Maybe Int
+    , company     :: Maybe String
     }
     deriving (Show, Generic)
 
@@ -36,18 +37,18 @@ instance ToJSON User where
     toJSON = genericToJSON jsonOptions
 
 data Repo = Repo
-    { name            :: String,
-      stargazersCount :: Int,
-      forksCount      :: Int,
-      size            :: Int,
-      fork            :: Bool,
-      archived        :: Bool,
-      visibility      :: String,
-      language        :: Maybe String,
-      languagesUrl    :: String,
-      createdAt       :: UTCTime,
-      updatedAt       :: UTCTime,
-      pushedAt        :: UTCTime
+    { name            :: String
+    , stargazersCount :: Int
+    , forksCount      :: Int
+    , size            :: Int
+    , fork            :: Bool
+    , archived        :: Bool
+    , visibility      :: String
+    , language        :: Maybe String
+    , languagesUrl    :: String
+    , createdAt       :: UTCTime
+    , updatedAt       :: UTCTime
+    , pushedAt        :: UTCTime
     }
     deriving (Show, Generic)
 
@@ -59,6 +60,17 @@ instance ToJSON Repo where
 
 data LangStat = LangStat
     { langName  :: String
-    , langCount :: Int
+    , langBytes :: Int
     , langPerc  :: Float
     } deriving (Show, Eq)
+
+data Org = Org
+    { login       :: String
+    , description :: Maybe String
+    } deriving (Show, Generic)
+
+instance FromJSON Org where
+    parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Org where
+    toJSON = genericToJSON jsonOptions

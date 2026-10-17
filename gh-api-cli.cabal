@@ -60,6 +60,7 @@ executable gh-api-cli
     aeson,
     base ^>=4.20.2.0,
     bytestring,
+    containers,
     file-embed,
     http-client,
     http-client-tls,
