@@ -63,6 +63,7 @@ There are a lot of available data tags:
     - `--ignore={repo1}` excludes repo1
     - `--ignore={repo1,repo2,...}` excludes all the repos you put here
     - repos are just the names of the repos.
+    - `--exclude-forked-repos` excludes the repos that the user has forked from someone else
   - Sorting (Optional):
     - `--sort={field}` - `percentage` - this is on by default, `name` - alphabetical
     - `--order={asc|desc}` - Order direction, `desc` for down, `asc` for up. `desc` is default for `percentage` and `asc` is default for `name`.
