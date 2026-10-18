@@ -134,4 +134,18 @@ There are a lot of available data tags:
 
 ### Organizations
 
-- I will figure this out whenever I'm not tired
+```bash
+gh-api-cli --user={username} --orgs [--constraints] [-options]
+```
+
+- `--orgs` - lists every organization the user is a member of
+  - Options:
+    - `-a` list all organizations (default)
+    - `-x` list top 10 organizations
+    - `-1` through `-9` list top N organizations
+  - Sorting:
+    - `--sort{field}` sort organizations by:
+      - `name` organization name (default)
+    - `--order={asc|dec}` direction (`asc` is default for names)
+  - Filters:
+    - `--filter-name-substr={pattern}` only include organizations whose name contains the given substring.

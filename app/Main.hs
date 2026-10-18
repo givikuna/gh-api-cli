@@ -13,7 +13,8 @@ import           CLI.Parser         (AppConfig (..), DataTarget (..), defaultCon
 
 import           GitHub.Client
     (getFollowers, getFollowing, getOrgs, getRepoLanguages, getRepos, getStarredRepos, getUser)
-import           GitHub.Engine      (getLanguageStats, getTotalStars, processRepos)
+import           GitHub.Engine
+    (getLanguageStats, getTotalStars, processOrgs, processRepos, processUsers)
 import           GitHub.Types       (LangStat (..), Org (..), Repo (..), User (..))
 
 import           Text.Printf
@@ -109,27 +110,30 @@ main = do
                     result <- getFollowers username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
-                        Right users -> do
-                            putStrLn $ "found " ++ show (length users) ++ " followers!"
-                            mapM_ (\(User { login = l }) -> putStrLn l) users
+                        Right rawUsers -> do
+                            let finalUsers = processUsers config rawUsers
+                            putStrLn $ "found " ++ show (length finalUsers) ++ " followers!"
+                            mapM_ (\(User { login = l }) -> putStrLn l) finalUsers
 
                 Following -> do
                     putStrLn "fetching following..."
                     result <- getFollowing username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
-                        Right users -> do
-                            putStrLn $ "following " ++ show (length users) ++ " users!"
-                            mapM_ (\(User { login = l }) -> putStrLn l) users
+                        Right rawUsers -> do
+                            let finalUsers = processUsers config rawUsers
+                            putStrLn $ "following " ++ show (length finalUsers) ++ " users!"
+                            mapM_ (\(User { login = l }) -> putStrLn l) finalUsers
 
                 Orgs -> do
                     putStrLn "fetching organizations..."
                     result <- getOrgs username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
-                        Right orgsList -> do
-                            putStrLn $ "found " ++ show (length orgsList) ++ " organizations!"
-                            mapM_ (\(Org { login = l }) -> putStrLn l) orgsList
+                        Right rawOrgs -> do
+                            let finalOrgs = processOrgs config rawOrgs
+                            putStrLn $ "found " ++ show (length finalOrgs) ++ " organizations!"
+                            mapM_ (\(Org { login = l }) -> putStrLn l) finalOrgs
 
                 TotalStars -> do
                     putStrLn "fetching repos to calculate total stars..."
