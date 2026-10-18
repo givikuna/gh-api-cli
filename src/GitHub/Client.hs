@@ -3,7 +3,7 @@
 
 module GitHub.Client where
 
-import           Data.Aeson                (eitherDecode)
+import           Data.Aeson                (FromJSON, eitherDecode)
 import           Data.ByteString           (ByteString)
 import qualified Data.ByteString.Char8     as BC
 import qualified Data.Map                  as Map
@@ -26,17 +26,37 @@ buildRequest url mToken = do
                 Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
     return initialRequest { requestHeaders = baseHeaders ++ authHeaders }
 
+-- | Generic paginator to fetch until the limit or until no more results are found.
+paginate :: FromJSON a => Int -> String -> Maybe String -> IO (Either String [a])
+paginate limit baseUrl mToken = do
+    manager <- newTlsManager
+    go manager 1 []
+  where
+    go manager page acc
+        | length acc >= limit = return $ Right (take limit acc)
+        | otherwise = do
+            let sep :: [Char] = if '?' `elem` baseUrl then "&" else "?"
+            let url :: [Char] = baseUrl ++ sep ++ "page=" ++ show page ++ "&per_page=100"
+            req <- buildRequest url mToken
+            res <- httpLbs req manager
+            case eitherDecode (responseBody res) of
+                Left err -> return $ Left err
+                Right items ->
+                    let newAcc = acc ++ items
+                    in if null items || length newAcc >= limit
+                        then return $ Right (take limit newAcc)
+                        else go manager (page + 1) newAcc
+
+
 getUser :: String -> Maybe String -> IO (Either String User)
 getUser username mToken = do
     manager <- newTlsManager
     req <- buildRequest ("https://api.github.com/users/" ++ username) mToken
     (eitherDecode . responseBody) <$> httpLbs req manager
 
-getRepos :: String -> Maybe String -> IO (Either String [Repo])
-getRepos username mToken = do
-    manager <- newTlsManager
-    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/repos?per_page=100") mToken
-    (eitherDecode . responseBody) <$> httpLbs req manager
+getRepos :: Int -> String -> Maybe String -> IO (Either String [Repo])
+getRepos limit username mToken =
+    paginate limit ("https://api.github.com/users/" ++ username ++ "/repos") mToken
 
 getRepoLanguages :: String -> Maybe String -> IO (Either String (Map.Map String Int))
 getRepoLanguages url mToken = do
@@ -44,26 +64,18 @@ getRepoLanguages url mToken = do
     req <- buildRequest url mToken
     (eitherDecode . responseBody) <$> httpLbs req manager
 
-getStarredRepos :: String -> Maybe String -> IO (Either String [Repo])
-getStarredRepos username mToken = do
-    manager <- newTlsManager
-    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/starred?per_page=100") mToken
-    (eitherDecode . responseBody) <$> httpLbs req manager
+getStarredRepos :: Int -> String -> Maybe String -> IO (Either String [Repo])
+getStarredRepos limit username mToken =
+    paginate limit ("https://api.github.com/users/" ++ username ++ "/starred") mToken
 
-getFollowers :: String -> Maybe String -> IO (Either String [User])
-getFollowers username mToken = do
-    manager <- newTlsManager
-    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/followers?per_page=100") mToken
-    (eitherDecode . responseBody) <$> httpLbs req manager
+getFollowers :: Int -> String -> Maybe String -> IO (Either String [User])
+getFollowers limit username mToken =
+    paginate limit ("https://api.github.com/users/" ++ username ++ "/followers") mToken
 
-getFollowing :: String -> Maybe String -> IO (Either String [User])
-getFollowing username mToken = do
-    manager <- newTlsManager
-    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/following?per_page=100") mToken
-    (eitherDecode . responseBody) <$> httpLbs req manager
+getFollowing :: Int -> String -> Maybe String -> IO (Either String [User])
+getFollowing limit username mToken =
+    paginate limit ("https://api.github.com/users/" ++ username ++ "/following") mToken
 
-getOrgs :: String -> Maybe String -> IO (Either String [Org])
-getOrgs username mToken = do
-    manager <- newTlsManager
-    req <- buildRequest ("https://api.github.com/users/" ++ username ++ "/orgs?per_page=100") mToken
-    (eitherDecode . responseBody) <$> httpLbs req manager
+getOrgs :: Int -> String -> Maybe String -> IO (Either String [Org])
+getOrgs limit username mToken =
+    paginate limit ("https://api.github.com/users/" ++ username ++ "/orgs") mToken

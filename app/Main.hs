@@ -18,6 +18,7 @@ import           GitHub.Engine
 import           GitHub.Types       (LangStat, Org (..), Repo (..), User (..))
 
 import           Data.Map           (Map)
+import           Data.Maybe         (isJust)
 import           Output.Format      (printOrgs, printRepos, printStats, printUsers)
 
 appVersion :: String
@@ -53,7 +54,7 @@ main = do
                         Right user -> printUsers config [user]
 
                 Repos -> do
-                    result <- getRepos username $ cfgToken config
+                    result <- getRepos (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> do
                             putStrLn "ERROR: failed to fetch repos"
@@ -64,24 +65,25 @@ main = do
                             printRepos config finalRepos
 
                 MostUsedLang -> do
-                    result <- getRepos username $ cfgToken config
+                    result <- getRepos (max 1000 (cfgLimit config)) username $ cfgToken config
                     case result of
                         Left err -> do
                             putStrLn "ERROR: failed to fetch repos"
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            let allReposConfig = config { cfgLimit = maxBound }
+                            let finalRepos :: [Repo] = processRepos allReposConfig rawRepos
                             langResults <- mapM (\r -> getRepoLanguages (languagesUrl r) (cfgToken config)) finalRepos
                             let validMaps :: [Map String Int] = [m | Right m <- langResults]
                             let stats :: [LangStat] = getLanguageStats config validMaps
                             printStats config stats
 
                 Stars -> do
-                    result <- getStarredRepos username $ cfgToken config
+                    result <- getStarredRepos (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> do
-                            putStrLn "ERROR: Failed to fetch starred repos"
+                            putStrLn "ERROR: failed to fetch starred repos"
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
@@ -89,23 +91,43 @@ main = do
                             printRepos config finalRepos
 
                 Followers -> do
-                    result <- getFollowers username $ cfgToken config
+                    result <- getFollowers (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let finalUsers :: [User] = processUsers config rawUsers
+                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos"]
+                            usersToProcess <- if needsDeep
+                                then mapM (\u@(User { login = l }) -> do
+                                    res <- getUser l (cfgToken config)
+                                    case res of
+                                        Right fullUser -> return fullUser
+                                        Left _         -> return u
+                                ) rawUsers
+                                else return rawUsers
+
+                            let finalUsers :: [User] = processUsers config usersToProcess
                             printUsers config finalUsers
 
                 Following -> do
-                    result <- getFollowing username $ cfgToken config
+                    result <- getFollowing (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let finalUsers :: [User] = processUsers config rawUsers
+                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos"]
+                            usersToProcess <- if needsDeep
+                                then mapM (\u@(User { login = l }) -> do
+                                    res <- getUser l (cfgToken config)
+                                    case res of
+                                        Right fullUser -> return fullUser
+                                        Left _         -> return u
+                                ) rawUsers
+                                else return rawUsers
+
+                            let finalUsers :: [User] = processUsers config usersToProcess
                             printUsers config finalUsers
 
                 Orgs -> do
-                    result <- getOrgs username $ cfgToken config
+                    result <- getOrgs (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawOrgs -> do
@@ -113,14 +135,16 @@ main = do
                             printOrgs config finalOrgs
 
                 TotalStars -> do
-                    result <- getRepos username $ cfgToken config
+                    -- Fetch maximum threshold to calculate stars properly, bypass visual limit
+                    result <- getRepos (max 1000 (cfgLimit config)) username $ cfgToken config
                     case result of
                         Left err -> do
                             putStrLn "ERROR: failed to fetch repos"
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            let allReposConfig = config { cfgLimit = maxBound }
+                            let finalRepos :: [Repo] = processRepos allReposConfig rawRepos
                             let total :: Int = getTotalStars finalRepos
                             if cfgFormat config == "json"
                                 then putStrLn $ "{\"total_stars\": " ++ show total ++ "}"

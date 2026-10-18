@@ -109,7 +109,6 @@ There are a lot of available data tags:
     - `-1` through `-9` list top $N$ starred repos.
   - Sorting:
     - `--sort={field}` sort starred repos by:
-      - `starred_at` the date the repo was starred (default, `desc`)
       - `name` repo name (`asc`)
       - `stars` number of stars (`desc`)
       - `updated` the `updated_at` property of the repo (`desc`)
