@@ -4,21 +4,24 @@
 module GitHub.Client where
 
 import           Data.Aeson                (eitherDecode)
+import           Data.ByteString           (ByteString)
 import qualified Data.ByteString.Char8     as BC
 import qualified Data.Map                  as Map
 
 import           Network.HTTP.Client
     (Request, httpLbs, parseRequest, requestHeaders, responseBody)
 import           Network.HTTP.Client.TLS   (newTlsManager)
+import           Network.HTTP.Types        (HeaderName)
 import           Network.HTTP.Types.Header (hAuthorization, hUserAgent)
 
 import           GitHub.Types              (Org, Repo, User)
 
+
 buildRequest :: String -> Maybe String -> IO Request
 buildRequest url mToken = do
     initialRequest <- parseRequest url
-    let baseHeaders = [(hUserAgent, "gh-api-cli")]
-    let authHeaders = case mToken of
+    let baseHeaders :: [(HeaderName, ByteString)] = [(hUserAgent, "gh-api-cli")]
+    let authHeaders :: [(HeaderName, ByteString)] = case mToken of
                 Nothing    -> []
                 Just token -> [(hAuthorization, BC.pack $ "Bearer " ++ token)]
     return initialRequest { requestHeaders = baseHeaders ++ authHeaders }

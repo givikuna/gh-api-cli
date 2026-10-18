@@ -62,7 +62,13 @@ data LangStat = LangStat
     { langName  :: String
     , langBytes :: Int
     , langPerc  :: Float
-    } deriving (Show, Eq)
+    } deriving (Show, Eq, Generic)
+
+instance FromJSON LangStat where
+    parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON LangStat where
+    toJSON = genericToJSON jsonOptions
 
 data Org = Org
     { login       :: String

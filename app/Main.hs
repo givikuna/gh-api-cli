@@ -15,9 +15,10 @@ import           GitHub.Client
     (getFollowers, getFollowing, getOrgs, getRepoLanguages, getRepos, getStarredRepos, getUser)
 import           GitHub.Engine
     (getLanguageStats, getTotalStars, processOrgs, processRepos, processUsers)
-import           GitHub.Types       (LangStat (..), Org (..), Repo (..), User (..))
+import           GitHub.Types       (LangStat, Org (..), Repo (..), User (..))
 
-import           Text.Printf
+import           Data.Map           (Map)
+import           Output.Format      (printOrgs, printRepos, printStats, printUsers)
 
 appVersion :: String
 appVersion = $(embedStringFile ".version")
@@ -41,8 +42,6 @@ main = do
             exitFailure
 
         Just username -> do
-            putStrLn $ "target acquired: " ++ username
-
             case cfgTarget config of
                 UnspecifiedTarget -> do
                     result <- getUser username $ cfgToken config
@@ -51,12 +50,9 @@ main = do
                             putStrLn "ERROR: failed to parse GitHub response"
                             putStrLn err
                             exitFailure
-                        Right user -> do
-                            putStrLn "YAY the USER has been FETCHED"
-                            print user
+                        Right user -> printUsers config [user]
 
                 Repos -> do
-                    putStrLn "fetching repos..."
                     result <- getRepos username $ cfgToken config
                     case result of
                         Left err -> do
@@ -65,11 +61,9 @@ main = do
                             exitFailure
                         Right rawRepos -> do
                             let finalRepos :: [Repo] = processRepos config rawRepos
-                            putStrLn $ "Found " ++ show (length finalRepos) ++ " repos!"
-                            mapM_ (\r -> putStrLn $ name r ++ " - Stars: " ++ show (stargazersCount r)) finalRepos
+                            printRepos config finalRepos
 
                 MostUsedLang -> do
-                    putStrLn "fetching repos to calculate real language statistics..."
                     result <- getRepos username $ cfgToken config
                     case result of
                         Left err -> do
@@ -77,23 +71,13 @@ main = do
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos = processRepos config rawRepos
-                            putStrLn $ "fetching actual line/byte counts for " ++ show (length finalRepos) ++ " repos. This may take a moment..."
-
+                            let finalRepos :: [Repo] = processRepos config rawRepos
                             langResults <- mapM (\r -> getRepoLanguages (languagesUrl r) (cfgToken config)) finalRepos
-
-                            let validMaps = [m | Right m <- langResults]
-                            let stats = getLanguageStats config validMaps
-
-                            putStrLn $ "Language stats (by actual code size) across " ++ show (length finalRepos) ++ " repos:"
-                            mapM_ (\stat ->
-                                putStrLn $ langName stat ++ ": "
-                                        ++ printf "%.2f%%" (langPerc stat)
-                                        ++ " (" ++ show (langBytes stat) ++ " bytes)"
-                                ) stats
+                            let validMaps :: [Map String Int] = [m | Right m <- langResults]
+                            let stats :: [LangStat] = getLanguageStats config validMaps
+                            printStats config stats
 
                 Stars -> do
-                    putStrLn "fetching starred repos..."
                     result <- getStarredRepos username $ cfgToken config
                     case result of
                         Left err -> do
@@ -101,42 +85,34 @@ main = do
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos = processRepos config rawRepos
-                            putStrLn $ "found " ++ show (length finalRepos) ++ " starred repos!"
-                            mapM_ (\r -> putStrLn $ name r ++ " - Stars: " ++ show (stargazersCount r)) finalRepos
+                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            printRepos config finalRepos
 
                 Followers -> do
-                    putStrLn "fetching followers..."
                     result <- getFollowers username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let finalUsers = processUsers config rawUsers
-                            putStrLn $ "found " ++ show (length finalUsers) ++ " followers!"
-                            mapM_ (\(User { login = l }) -> putStrLn l) finalUsers
+                            let finalUsers :: [User] = processUsers config rawUsers
+                            printUsers config finalUsers
 
                 Following -> do
-                    putStrLn "fetching following..."
                     result <- getFollowing username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let finalUsers = processUsers config rawUsers
-                            putStrLn $ "following " ++ show (length finalUsers) ++ " users!"
-                            mapM_ (\(User { login = l }) -> putStrLn l) finalUsers
+                            let finalUsers :: [User] = processUsers config rawUsers
+                            printUsers config finalUsers
 
                 Orgs -> do
-                    putStrLn "fetching organizations..."
                     result <- getOrgs username $ cfgToken config
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawOrgs -> do
-                            let finalOrgs = processOrgs config rawOrgs
-                            putStrLn $ "found " ++ show (length finalOrgs) ++ " organizations!"
-                            mapM_ (\(Org { login = l }) -> putStrLn l) finalOrgs
+                            let finalOrgs :: [Org] = processOrgs config rawOrgs
+                            printOrgs config finalOrgs
 
                 TotalStars -> do
-                    putStrLn "fetching repos to calculate total stars..."
                     result <- getRepos username $ cfgToken config
                     case result of
                         Left err -> do
@@ -146,4 +122,6 @@ main = do
                         Right rawRepos -> do
                             let finalRepos :: [Repo] = processRepos config rawRepos
                             let total :: Int = getTotalStars finalRepos
-                            putStrLn $ "total stars (across " ++ show (length finalRepos) ++ " repos): " ++ show total
+                            if cfgFormat config == "json"
+                                then putStrLn $ "{\"total_stars\": " ++ show total ++ "}"
+                                else putStrLn $ "Total stars: " ++ show total

@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module GitHub.Engine where
 
@@ -16,33 +17,33 @@ isSubstrOf sub str = any (sub `isPrefixOf`) (tails str)
 processRepos :: AppConfig -> [Repo] -> [Repo]
 processRepos config repos =
     let
-        noExcludedLangs = if null (cfgExcludeLangs config)
+        noExcludedLangs :: [Repo] = if null (cfgExcludeLangs config)
             then repos
             else filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeLangs config)) (language r)) repos
 
-        noExcludedMain = if null (cfgExcludeMainLang config)
+        noExcludedMain   :: [Repo] = if null (cfgExcludeMainLang config)
             then noExcludedLangs
             else filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeMainLang config)) (language r)) noExcludedLangs
 
-        filteredForks = case cfgFilterFork config of
+        filteredForks    :: [Repo] = case cfgFilterFork config of
                 Nothing    -> noExcludedMain
                 Just True  -> filter fork noExcludedMain
                 Just False -> filter (\r -> not (fork r)) noExcludedMain
 
-        filteredArchived = case cfgFilterArchived config of
+        filteredArchived :: [Repo] = case cfgFilterArchived config of
             Nothing    -> filteredForks
             Just True  -> filter archived filteredForks
             Just False -> filter (\r -> not (archived r)) filteredForks
 
-        filteredNameSub = case cfgFilterNameSubstr config of
+        filteredNameSub  :: [Repo] = case cfgFilterNameSubstr config of
             Nothing  -> filteredArchived
             Just sub -> filter (\r -> sub `isSubstrOf` name r) filteredArchived
 
-        filteredLangs = if null (cfgFilterLangs config)
+        filteredLangs    :: [Repo] = if null (cfgFilterLangs config)
             then filteredNameSub
             else filter (\r -> maybe False (\l -> l `elem` cfgFilterLangs config) (language r)) filteredNameSub
 
-        filteredMainLang = case cfgFilterMainLang config of
+        filteredMainLang :: [Repo] = case cfgFilterMainLang config of
             Nothing   -> filteredLangs
             Just lang -> filter (\r -> maybe False (== lang) (language r)) filteredLangs
 
@@ -67,27 +68,27 @@ processRepos config repos =
 
 processUsers :: AppConfig -> [User] -> [User]
 processUsers config users =
-    let filteredNameSub = case cfgFilterNameSubstr config of
+    let filteredNameSub :: [User] = case cfgFilterNameSubstr config of
             Nothing  -> users
             Just sub -> filter (\(User { login = l }) -> sub `isSubstrOf` l) users
 
-        filteredNameReg = case cfgFilterNameRegex config of
+        filteredNameReg :: [User]  = case cfgFilterNameRegex config of
             Nothing  -> filteredNameSub
             Just sub -> filter (\(User { login = l }) -> sub `isSubstrOf` l) filteredNameSub
 
-        filteredCompany = case cfgFilterCompany config of
+        filteredCompany :: [User] = case cfgFilterCompany config of
             Nothing  -> filteredNameReg
             Just sub -> filter (\u -> maybe False (\c -> sub `isSubstrOf` c) (company u)) filteredNameReg
 
-        sortField = fromMaybe "name" (cfgSort config)
-        orderDir  = fromMaybe Asc (cfgOrder config)
+        sortField :: String  = fromMaybe "name" (cfgSort config)
+        orderDir  :: SortOrder  = fromMaybe Asc (cfgOrder config)
 
         applyOrder :: Ord b => (User -> b) -> [User] -> [User]
         applyOrder selector lst = case orderDir of
             Asc  -> sortOn selector lst
             Desc -> sortOn (\u -> Down (selector u)) lst
 
-        sortedUsers = case sortField of
+        sortedUsers :: [User] = case sortField of
             "followers" -> applyOrder (fromMaybe 0 . followers) filteredCompany
             "repos"     -> applyOrder (fromMaybe 0 . publicRepos) filteredCompany
             "joined"    -> filteredCompany
@@ -97,12 +98,12 @@ processUsers config users =
 
 processOrgs :: AppConfig -> [Org] -> [Org]
 processOrgs config orgs =
-    let filteredNameSub = case cfgFilterNameSubstr config of
+    let filteredNameSub :: [Org] = case cfgFilterNameSubstr config of
             Nothing  -> orgs
             Just sub -> filter (\(Org { login = l }) -> sub `isSubstrOf` l) orgs
 
-        sortField = fromMaybe "name" (cfgSort config)
-        orderDir  = fromMaybe Asc (cfgOrder config)
+        sortField :: String  = fromMaybe "name" (cfgSort config)
+        orderDir  :: SortOrder  = fromMaybe Asc (cfgOrder config)
 
         sortedOrgs = case sortField of
             _ -> case orderDir of
