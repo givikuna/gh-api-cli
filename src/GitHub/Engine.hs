@@ -3,15 +3,20 @@
 
 module GitHub.Engine where
 
+import           Control.Monad    (filterM)
+
+import           Data.Char        (toLower)
 import           Data.List        (isPrefixOf, sortOn, tails)
 import qualified Data.Map.Strict  as Map
 import           Data.Maybe       (fromMaybe)
 import           Data.Ord         (Down (..))
 import           Data.Time.Clock  (UTCTime)
 import           Data.Time.Format (defaultTimeLocale, parseTimeM)
+
 import           Text.Regex.TDFA  ((=~))
 
 import           CLI.Parser       (AppConfig (..), SortOrder (..))
+
 import           GitHub.Types     (LangStat (..), Org (..), Repo (..), User (..))
 
 isSubstrOf :: String -> String -> Bool
@@ -20,13 +25,12 @@ isSubstrOf sub str = any (sub `isPrefixOf`) (tails str)
 parseDate :: String -> Maybe UTCTime
 parseDate = parseTimeM True defaultTimeLocale "%Y-%m-%d"
 
-processRepos :: AppConfig -> [Repo] -> [Repo]
-processRepos config repos =
+processRepos :: Monad m => AppConfig -> (String -> m (Either String (Map.Map String Int))) -> [Repo] -> m [Repo]
+processRepos config fetchLangs repos = do
     let
         fIgnore r = not $ name r `elem` cfgIgnoreRepos config
         fExcludeLangs r = maybe True (`notElem` cfgExcludeLangs config) (language r)
         fExcludeMain r  = maybe True (`notElem` cfgExcludeMainLang config) (language r)
-        fExcludeXor r   = maybe True (`notElem` cfgExcludeXorLang config) (language r)
 
         fFork r = case cfgFilterFork config of
             Nothing -> True
@@ -48,13 +52,13 @@ processRepos config repos =
             "all" -> True
             v     -> visibility r == v
 
-        fCreatedAfter r = case cfgFilterCreatedAfter config >>= parseDate of
+        fCreatedAfter (Repo { createdAt = c }) = case cfgFilterCreatedAfter config >>= parseDate of
             Nothing -> True
-            Just d  -> createdAt r >= d
+            Just d  -> c >= d
 
-        fCreatedBefore r = case cfgFilterCreatedBefore config >>= parseDate of
+        fCreatedBefore (Repo { createdAt = c }) = case cfgFilterCreatedBefore config >>= parseDate of
             Nothing -> True
-            Just d  -> createdAt r <= d
+            Just d  -> c <= d
 
         fUpdatedAfter r = case cfgFilterUpdatedAfter config >>= parseDate of
             Nothing -> True
@@ -64,44 +68,57 @@ processRepos config repos =
             Nothing -> True
             Just d  -> updatedAt r <= d
 
-        fLangs r = if null (cfgFilterLangs config)
-            then True
-            else maybe False (`elem` cfgFilterLangs config) (language r)
-
         fMainLang r = case cfgFilterMainLang config of
             Nothing -> True
             Just l  -> maybe False (== l) (language r)
 
-        allFilters r = fIgnore r && fExcludeLangs r && fExcludeMain r && fExcludeXor r &&
+        allPureFilters r = fIgnore r && fExcludeLangs r && fExcludeMain r &&
                        fFork r && fArchived r && fNameSub r && fNameReg r && fVis r &&
                        fCreatedAfter r && fCreatedBefore r && fUpdatedAfter r && fUpdatedBefore r &&
-                       fLangs r && fMainLang r
+                       fMainLang r
 
-        filtered = filter allFilters repos
+        pureFiltered = filter allPureFilters repos
 
-        sortField = fromMaybe "stars" (cfgSort config)
-        orderDir  = case cfgOrder config of
+    let needsDeep = not (null (cfgFilterLangs config)) || not (null (cfgExcludeXorLang config))
+
+    deepFiltered <- if not needsDeep
+        then return pureFiltered
+        else filterM (\r -> do
+            res <- fetchLangs (languagesUrl r)
+            case res of
+                Right lMap -> do
+                    let fLangs = if null (cfgFilterLangs config)
+                            then True
+                            else any (`Map.member` lMap) (cfgFilterLangs config)
+
+                    let fXor = case cfgExcludeXorLang config of
+                            [l1, l2] -> Map.member l1 lMap == Map.member l2 lMap
+                            _        -> True
+
+                    return $ fLangs && fXor
+                Left _ -> return False
+        ) pureFiltered
+
+    let sortField = fromMaybe "stars" (cfgSort config)
+    let orderDir  = case cfgOrder config of
             Just o  -> o
             Nothing -> if sortField `elem` ["name", "created"] then Asc else Desc
 
-        applyOrder :: Ord b => (Repo -> b) -> [Repo] -> [Repo]
+    let applyOrder :: Ord b => (Repo -> b) -> [Repo] -> [Repo]
         applyOrder selector lst = case orderDir of
             Asc  -> sortOn selector lst
             Desc -> sortOn (\r -> Down (selector r)) lst
 
-        sortedRepos = case sortField of
-            "name"       -> applyOrder name filtered
-            "size"       -> applyOrder size filtered
-            "forks"      -> applyOrder forksCount filtered
-            "created"    -> applyOrder createdAt filtered
-            "updated"    -> applyOrder updatedAt filtered
-            "pushed"     -> applyOrder pushedAt filtered
-            "starred_at" -> case orderDir of
-                              Asc  -> reverse filtered
-                              Desc -> filtered
-            _            -> applyOrder stargazersCount filtered
+    let sortedRepos = case sortField of
+            "name"    -> applyOrder name deepFiltered
+            "size"    -> applyOrder size deepFiltered
+            "forks"   -> applyOrder forksCount deepFiltered
+            "created" -> applyOrder (\(Repo { createdAt = c }) -> c) deepFiltered
+            "updated" -> applyOrder updatedAt deepFiltered
+            "pushed"  -> applyOrder pushedAt deepFiltered
+            _         -> applyOrder stargazersCount deepFiltered
 
-    in take (cfgLimit config) sortedRepos
+    return $ take (cfgLimit config) sortedRepos
 
 processUsers :: AppConfig -> [User] -> [User]
 processUsers config users =
@@ -133,9 +150,7 @@ processUsers config users =
         sortedUsers :: [User] = case sortField of
             "followers" -> applyOrder (fromMaybe 0 . followers) filteredUsers
             "repos"     -> applyOrder (fromMaybe 0 . publicRepos) filteredUsers
-            "joined"    -> case orderDir of
-                             Asc  -> reverse filteredUsers
-                             Desc -> filteredUsers
+            "joined"    -> applyOrder (\(User { createdAt = c }) -> c) filteredUsers
             _           -> applyOrder (\(User { login = l }) -> l) filteredUsers
 
     in take (cfgLimit config) sortedUsers
@@ -166,7 +181,12 @@ getTotalStars repos = sum $ map stargazersCount repos
 getLanguageStats :: AppConfig -> [Map.Map String Int] -> [LangStat]
 getLanguageStats config langMaps = take (cfgLimit config) sortedStats
   where
-    combinedMap = Map.unionsWith (+) langMaps
+    rawCombinedMap = Map.unionsWith (+) langMaps
+
+    excludes = map (map toLower) (cfgExcludeLangs config)
+
+    combinedMap = Map.filterWithKey (\k _ -> map toLower k `notElem` excludes) rawCombinedMap
+
     totalBytes = sum (Map.elems combinedMap)
 
     baseStats = if totalBytes == 0

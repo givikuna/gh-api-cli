@@ -61,10 +61,11 @@ main = do
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            finalRepos <- processRepos config (\url -> getRepoLanguages url (cfgToken config)) rawRepos
                             printRepos config finalRepos
 
                 MostUsedLang -> do
+                    -- Fetch maximum threshold, bypass the standard limit to analyze all repos
                     result <- getRepos (max 1000 (cfgLimit config)) username $ cfgToken config
                     case result of
                         Left err -> do
@@ -73,7 +74,7 @@ main = do
                             exitFailure
                         Right rawRepos -> do
                             let allReposConfig = config { cfgLimit = maxBound }
-                            let finalRepos :: [Repo] = processRepos allReposConfig rawRepos
+                            finalRepos <- processRepos allReposConfig (\url -> getRepoLanguages url (cfgToken config)) rawRepos
                             langResults <- mapM (\r -> getRepoLanguages (languagesUrl r) (cfgToken config)) finalRepos
                             let validMaps :: [Map String Int] = [m | Right m <- langResults]
                             let stats :: [LangStat] = getLanguageStats config validMaps
@@ -83,11 +84,11 @@ main = do
                     result <- getStarredRepos (cfgLimit config) username $ cfgToken config
                     case result of
                         Left err -> do
-                            putStrLn "ERROR: failed to fetch starred repos"
+                            putStrLn "ERROR: Failed to fetch starred repos"
                             putStrLn err
                             exitFailure
                         Right rawRepos -> do
-                            let finalRepos :: [Repo] = processRepos config rawRepos
+                            finalRepos <- processRepos config (\url -> getRepoLanguages url (cfgToken config)) rawRepos
                             printRepos config finalRepos
 
                 Followers -> do
@@ -95,7 +96,8 @@ main = do
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos"]
+                            -- Hydrate simple users dynamically if deeper sorting/filtering requires it
+                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos", Just "joined"]
                             usersToProcess <- if needsDeep
                                 then mapM (\u@(User { login = l }) -> do
                                     res <- getUser l (cfgToken config)
@@ -113,7 +115,7 @@ main = do
                     case result of
                         Left err -> putStrLn err >> exitFailure
                         Right rawUsers -> do
-                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos"]
+                            let needsDeep = isJust (cfgFilterCompany config) || cfgSort config `elem` [Just "followers", Just "repos", Just "joined"]
                             usersToProcess <- if needsDeep
                                 then mapM (\u@(User { login = l }) -> do
                                     res <- getUser l (cfgToken config)
@@ -144,7 +146,7 @@ main = do
                             exitFailure
                         Right rawRepos -> do
                             let allReposConfig = config { cfgLimit = maxBound }
-                            let finalRepos :: [Repo] = processRepos allReposConfig rawRepos
+                            finalRepos <- processRepos allReposConfig (\url -> getRepoLanguages url (cfgToken config)) rawRepos
                             let total :: Int = getTotalStars finalRepos
                             if cfgFormat config == "json"
                                 then putStrLn $ "{\"total_stars\": " ++ show total ++ "}"

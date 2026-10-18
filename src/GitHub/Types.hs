@@ -27,6 +27,7 @@ data User = User
     , following   :: Maybe Int
     , publicRepos :: Maybe Int
     , company     :: Maybe String
+    , createdAt   :: Maybe UTCTime
     }
     deriving (Show, Generic)
 
