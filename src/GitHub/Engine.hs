@@ -3,52 +3,86 @@
 
 module GitHub.Engine where
 
-import           Data.List       (isPrefixOf, sortOn, tails)
-import qualified Data.Map.Strict as Map
-import           Data.Maybe      (fromMaybe)
-import           Data.Ord        (Down (..))
+import           Data.List        (isPrefixOf, sortOn, tails)
+import qualified Data.Map.Strict  as Map
+import           Data.Maybe       (fromMaybe)
+import           Data.Ord         (Down (..))
+import           Data.Time.Clock  (UTCTime)
+import           Data.Time.Format (defaultTimeLocale, parseTimeM)
+import           Text.Regex.TDFA  ((=~))
 
-import           CLI.Parser      (AppConfig (..), SortOrder (..))
-import           GitHub.Types    (LangStat (..), Org (..), Repo (..), User (..))
+import           CLI.Parser       (AppConfig (..), SortOrder (..))
+import           GitHub.Types     (LangStat (..), Org (..), Repo (..), User (..))
 
 isSubstrOf :: String -> String -> Bool
 isSubstrOf sub str = any (sub `isPrefixOf`) (tails str)
 
+parseDate :: String -> Maybe UTCTime
+parseDate = parseTimeM True defaultTimeLocale "%Y-%m-%d"
+
 processRepos :: AppConfig -> [Repo] -> [Repo]
 processRepos config repos =
     let
-        noExcludedLangs :: [Repo] = if null (cfgExcludeLangs config)
-            then repos
-            else filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeLangs config)) (language r)) repos
+        fIgnore r = not $ name r `elem` cfgIgnoreRepos config
+        fExcludeLangs r = maybe True (`notElem` cfgExcludeLangs config) (language r)
+        fExcludeMain r  = maybe True (`notElem` cfgExcludeMainLang config) (language r)
+        fExcludeXor r   = maybe True (`notElem` cfgExcludeXorLang config) (language r)
 
-        noExcludedMain   :: [Repo] = if null (cfgExcludeMainLang config)
-            then noExcludedLangs
-            else filter (\r -> maybe True (\l -> not (l `elem` cfgExcludeMainLang config)) (language r)) noExcludedLangs
+        fFork r = case cfgFilterFork config of
+            Nothing -> True
+            Just b  -> fork r == b
 
-        filteredForks    :: [Repo] = case cfgFilterFork config of
-                Nothing    -> noExcludedMain
-                Just True  -> filter fork noExcludedMain
-                Just False -> filter (\r -> not (fork r)) noExcludedMain
+        fArchived r = case cfgFilterArchived config of
+            Nothing -> True
+            Just b  -> archived r == b
 
-        filteredArchived :: [Repo] = case cfgFilterArchived config of
-            Nothing    -> filteredForks
-            Just True  -> filter archived filteredForks
-            Just False -> filter (\r -> not (archived r)) filteredForks
+        fNameSub r = case cfgFilterNameSubstr config of
+            Nothing -> True
+            Just s  -> s `isSubstrOf` name r
 
-        filteredNameSub  :: [Repo] = case cfgFilterNameSubstr config of
-            Nothing  -> filteredArchived
-            Just sub -> filter (\r -> sub `isSubstrOf` name r) filteredArchived
+        fNameReg r = case cfgFilterNameRegex config of
+            Nothing  -> True
+            Just reg -> name r =~ reg
 
-        filteredLangs    :: [Repo] = if null (cfgFilterLangs config)
-            then filteredNameSub
-            else filter (\r -> maybe False (\l -> l `elem` cfgFilterLangs config) (language r)) filteredNameSub
+        fVis r = case cfgFilterVisibility config of
+            "all" -> True
+            v     -> visibility r == v
 
-        filteredMainLang :: [Repo] = case cfgFilterMainLang config of
-            Nothing   -> filteredLangs
-            Just lang -> filter (\r -> maybe False (== lang) (language r)) filteredLangs
+        fCreatedAfter r = case cfgFilterCreatedAfter config >>= parseDate of
+            Nothing -> True
+            Just d  -> createdAt r >= d
+
+        fCreatedBefore r = case cfgFilterCreatedBefore config >>= parseDate of
+            Nothing -> True
+            Just d  -> createdAt r <= d
+
+        fUpdatedAfter r = case cfgFilterUpdatedAfter config >>= parseDate of
+            Nothing -> True
+            Just d  -> updatedAt r >= d
+
+        fUpdatedBefore r = case cfgFilterUpdatedBefore config >>= parseDate of
+            Nothing -> True
+            Just d  -> updatedAt r <= d
+
+        fLangs r = if null (cfgFilterLangs config)
+            then True
+            else maybe False (`elem` cfgFilterLangs config) (language r)
+
+        fMainLang r = case cfgFilterMainLang config of
+            Nothing -> True
+            Just l  -> maybe False (== l) (language r)
+
+        allFilters r = fIgnore r && fExcludeLangs r && fExcludeMain r && fExcludeXor r &&
+                       fFork r && fArchived r && fNameSub r && fNameReg r && fVis r &&
+                       fCreatedAfter r && fCreatedBefore r && fUpdatedAfter r && fUpdatedBefore r &&
+                       fLangs r && fMainLang r
+
+        filtered = filter allFilters repos
 
         sortField = fromMaybe "stars" (cfgSort config)
-        orderDir  = fromMaybe Desc (cfgOrder config)
+        orderDir  = case cfgOrder config of
+            Just o  -> o
+            Nothing -> if sortField `elem` ["name", "created"] then Asc else Desc
 
         applyOrder :: Ord b => (Repo -> b) -> [Repo] -> [Repo]
         applyOrder selector lst = case orderDir of
@@ -56,32 +90,40 @@ processRepos config repos =
             Desc -> sortOn (\r -> Down (selector r)) lst
 
         sortedRepos = case sortField of
-            "name"    -> sortOn name filteredMainLang
-            "size"    -> applyOrder size filteredMainLang
-            "forks"   -> applyOrder forksCount filteredMainLang
-            "created" -> applyOrder createdAt filteredMainLang
-            "updated" -> applyOrder updatedAt filteredMainLang
-            "pushed"  -> applyOrder pushedAt filteredMainLang
-            _         -> applyOrder stargazersCount filteredMainLang
+            "name"       -> applyOrder name filtered
+            "size"       -> applyOrder size filtered
+            "forks"      -> applyOrder forksCount filtered
+            "created"    -> applyOrder createdAt filtered
+            "updated"    -> applyOrder updatedAt filtered
+            "pushed"     -> applyOrder pushedAt filtered
+            "starred_at" -> case orderDir of
+                              Asc  -> reverse filtered
+                              Desc -> filtered
+            _            -> applyOrder stargazersCount filtered
 
     in take (cfgLimit config) sortedRepos
 
 processUsers :: AppConfig -> [User] -> [User]
 processUsers config users =
-    let filteredNameSub :: [User] = case cfgFilterNameSubstr config of
-            Nothing  -> users
-            Just sub -> filter (\(User { login = l }) -> sub `isSubstrOf` l) users
+    let fNameSub (User { login = l }) = case cfgFilterNameSubstr config of
+            Nothing -> True
+            Just s  -> s `isSubstrOf` l
 
-        filteredNameReg :: [User]  = case cfgFilterNameRegex config of
-            Nothing  -> filteredNameSub
-            Just sub -> filter (\(User { login = l }) -> sub `isSubstrOf` l) filteredNameSub
+        fNameReg (User { login = l }) = case cfgFilterNameRegex config of
+            Nothing  -> True
+            Just reg -> l =~ reg
 
-        filteredCompany :: [User] = case cfgFilterCompany config of
-            Nothing  -> filteredNameReg
-            Just sub -> filter (\u -> maybe False (\c -> sub `isSubstrOf` c) (company u)) filteredNameReg
+        fComp u = case cfgFilterCompany config of
+            Nothing -> True
+            Just s  -> maybe False (\c -> s `isSubstrOf` c) (company u)
 
-        sortField :: String  = fromMaybe "name" (cfgSort config)
-        orderDir  :: SortOrder  = fromMaybe Asc (cfgOrder config)
+        allFilters u = fNameSub u && fNameReg u && fComp u
+        filteredUsers = filter allFilters users
+
+        sortField :: String = fromMaybe "name" (cfgSort config)
+        orderDir  :: SortOrder = case cfgOrder config of
+            Just o  -> o
+            Nothing -> if sortField == "name" then Asc else Desc
 
         applyOrder :: Ord b => (User -> b) -> [User] -> [User]
         applyOrder selector lst = case orderDir of
@@ -89,26 +131,32 @@ processUsers config users =
             Desc -> sortOn (\u -> Down (selector u)) lst
 
         sortedUsers :: [User] = case sortField of
-            "followers" -> applyOrder (fromMaybe 0 . followers) filteredCompany
-            "repos"     -> applyOrder (fromMaybe 0 . publicRepos) filteredCompany
-            "joined"    -> filteredCompany
-            _           -> applyOrder (\(User { login = l }) -> l) filteredCompany
+            "followers" -> applyOrder (fromMaybe 0 . followers) filteredUsers
+            "repos"     -> applyOrder (fromMaybe 0 . publicRepos) filteredUsers
+            "joined"    -> case orderDir of
+                             Asc  -> reverse filteredUsers
+                             Desc -> filteredUsers
+            _           -> applyOrder (\(User { login = l }) -> l) filteredUsers
 
     in take (cfgLimit config) sortedUsers
 
 processOrgs :: AppConfig -> [Org] -> [Org]
 processOrgs config orgs =
-    let filteredNameSub :: [Org] = case cfgFilterNameSubstr config of
-            Nothing  -> orgs
-            Just sub -> filter (\(Org { login = l }) -> sub `isSubstrOf` l) orgs
+    let fNameSub (Org { login = l }) = case cfgFilterNameSubstr config of
+            Nothing -> True
+            Just s  -> s `isSubstrOf` l
 
-        sortField :: String  = fromMaybe "name" (cfgSort config)
-        orderDir  :: SortOrder  = fromMaybe Asc (cfgOrder config)
+        filteredOrgs = filter fNameSub orgs
+
+        sortField :: String = fromMaybe "name" (cfgSort config)
+        orderDir  :: SortOrder = case cfgOrder config of
+            Just o  -> o
+            Nothing -> if sortField == "name" then Asc else Desc
 
         sortedOrgs = case sortField of
             _ -> case orderDir of
-                    Asc  -> sortOn (\(Org { login = l }) -> l) filteredNameSub
-                    Desc -> sortOn (\(Org { login = l }) -> Down l) filteredNameSub
+                    Asc  -> sortOn (\(Org { login = l }) -> l) filteredOrgs
+                    Desc -> sortOn (\(Org { login = l }) -> Down l) filteredOrgs
 
     in take (cfgLimit config) sortedOrgs
 

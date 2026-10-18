@@ -19,6 +19,7 @@
     "optparse",
     "Perc",
     "pkgs",
+    "tdfa",
     "unwords"
   ],
   "haskell.ghcupExecutablePath": "ghc",

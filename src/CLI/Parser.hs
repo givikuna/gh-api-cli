@@ -36,6 +36,7 @@ data AppConfig = AppConfig
     , cfgExcludeLangs        :: [String]
     , cfgExcludeMainLang     :: [String]
     , cfgExcludeXorLang      :: [String]
+    , cfgIgnoreRepos         :: [String]
 
     , cfgFilterLangs         :: [String]
     , cfgFilterMainLang      :: Maybe String
@@ -76,6 +77,7 @@ defaultConfig = AppConfig
     , cfgExcludeLangs        = []
     , cfgExcludeMainLang     = []
     , cfgExcludeXorLang      = []
+    , cfgIgnoreRepos         = []
     , cfgFilterLangs         = []
     , cfgFilterMainLang      = Nothing
 
@@ -133,6 +135,7 @@ parseArgs (arg : rest) config =
         "--order=desc"              -> parseArgs rest (config { cfgOrder = Just Desc })
         "--filter-fork=true"        -> parseArgs rest (config { cfgFilterFork = Just True })
         "--filter-fork=false"       -> parseArgs rest (config { cfgFilterFork = Just False })
+        "--exclude-forked-repos"    -> parseArgs rest (config { cfgFilterFork = Just False })
         "--filter-archived=true"    -> parseArgs rest (config { cfgFilterArchived = Just True })
         "--filter-archived=false"   -> parseArgs rest (config { cfgFilterArchived = Just False })
 
@@ -173,6 +176,10 @@ parseArgs (arg : rest) config =
             -> parseArgs rest $ config
                 { cfgExcludeXorLang = cfgExcludeXorLang config ++ splitBy ',' excludeXor }
 
+            | Just ignRepos <- stripPrefix "--ignore=" arg
+            -> parseArgs rest $ config
+                { cfgIgnoreRepos = cfgIgnoreRepos config ++ splitBy ',' ignRepos }
+
             | Just nameSub <- stripPrefix "--filter-name-substr=" arg
             -> parseArgs rest $ config
                 { cfgFilterNameSubstr = Just nameSub }
@@ -201,7 +208,6 @@ parseArgs (arg : rest) config =
             -> parseArgs rest $ config
                 { cfgFilterUpdatedBefore = Just uBefore }
 
-            -- Enums & Language Filters
             | Just vis <- stripPrefix "--filter-updated-visibility=" arg
             -> parseArgs rest $ config
                 { cfgFilterVisibility = vis }
